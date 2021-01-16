@@ -37,3 +37,16 @@ filter_with_cdhit <- function(sequences, threshold, word_length = 2, cdhit_path 
   res
 }
 
+filter_with_blat <- function(sequences, database, blat_path = "./third-party") {
+  input <- tempfile(tmpdir = getwd())
+  output <- tempfile(tmpdir = getwd())
+  database_file <- tempfile(tmpdir = getwd())
+  blat <- paste0(blat_path, "/blat ", database_file, " ", input, " -prot -out=blast8 ", output)
+  write_fasta(sequences, input)
+  write_fasta(database, database_file)
+  system(blat)
+  res <- unique(read.delim(output, header = FALSE)[["V1"]])
+  file.remove(input, output, database_file)
+  sequences[which(!(names(sequences) %in% res))]
+}
+
