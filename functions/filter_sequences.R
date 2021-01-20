@@ -50,3 +50,37 @@ filter_with_blat <- function(sequences, database, blat_path = "./third-party") {
   sequences[which(!(names(sequences) %in% res))]
 }
 
+
+generate_cutted_sequences <- function(sequences, lens, excluded_aa = NULL) {
+  if(is.null(excluded_aa)) {
+    seq_vec <- unlist(sequences, use.names = FALSE)
+  } else {
+    seq_vec <- unlist(sequences, use.names = FALSE)
+    seq_vec[which(seq_vec != excluded_aa)]
+  }
+
+  end_vec <- unname(cumsum(sample(lens)))
+  start_vec <- c(1, end_vec[-length(end_vec)] + 1)
+  
+  seq_parts <- floor(1L:length(seq_vec)/max(end_vec)) + 1
+  max_part <- length(seq_vec)%/%max(end_vec) 
+  
+  splits <- split(seq_vec, seq_parts)
+  pos_df <- data.frame(start = start_vec, end = end_vec, part = sample(1L:max_part, size = length(lens), replace = TRUE))
+  cutted_sequences <- pblapply(1L:nrow(pos_df), function(ith_row) {
+    unname(splits[[pos_df[ith_row, "part"]]][pos_df[ith_row, "start"]:pos_df[ith_row, "end"]])
+  })
+  
+  names(cutted_sequences) <- paste0("CUTTED", 1L:length(cutted_sequences))
+  cutted_sequences
+}
+
+
+filter_out_positive_sequences <- function(sequences, positive_dataset) {
+  sequences[which(!(sequences %in% positive_dataset))]
+}
+
+
+filter_random_sequences <- function(sequences, number_of_sequences) {
+  sample(sequences, number_of_sequences)
+}
