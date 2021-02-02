@@ -84,3 +84,18 @@ filter_out_positive_sequences <- function(sequences, positive_dataset) {
 filter_random_sequences <- function(sequences, number_of_sequences) {
   sample(sequences, number_of_sequences)
 }
+
+
+filter_by_location <- function(sequences, uniprot_data, location, evidence = NULL, exclude = FALSE) {
+  has_annot <- uniprot_data[["Entry"]][which(grepl(location, uniprot_data[[`Subcellular.location..CC.`]]))] 
+  if(!is.null(evidence)) {
+    x <- filter(uniprot_data, Entry %in% has_annot)
+    has_annot <- x[["Entry"]][which(grepl(evidence, x[[`Subcellular.location..CC.`]]))]
+  }
+  has_annot <- unique(unlist(has_annot))
+  if(exclude == TRUE) {
+    sequences[which(!(names(sequences) %in% has_annot))]
+  } else {
+    sequences[which(names(sequences) %in% has_annot)]
+  }
+}
