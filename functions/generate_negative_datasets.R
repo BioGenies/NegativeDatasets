@@ -23,7 +23,7 @@ generate_negative_dataset_2 <- function(sequences, positive_dataset) {
                                 uniprot_data = uniprot_data, 
                                 keywords_vec = c("Antimicrobial", "Secreted"),
                                 exclude = TRUE),
-          10000)
+          10000),
         sample(lengths(positive_dataset), 10000, replace = TRUE))), 
     0.7)
 }
