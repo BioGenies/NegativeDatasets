@@ -135,3 +135,26 @@ generate_negative_dataset_10 <- function(sequences, uniprot_data, positive_datas
       positive_dataset),
     lengths(positive_dataset))
 }
+
+
+# Gabere&Noble
+generate_negative_dataset_11 <- function(sequences, uniprot_data, positive_dataset) {
+  generate_cutted_sequences(
+    filter_by_location(
+      filter_by_annotations(sequences = sequences,
+                            uniprot_data = uniprot_data,
+                            keywords_vec = "Antimicrobial",
+                            exclude = TRUE),
+      location = "Cytoplasm|Endoplasmic reticulum|Mitochondrion|Golgi"),
+    6*lengths(positive_dataset))
+}
+
+
+# AMAP
+generate_negative_dataset_12 <- function(sequences, uniprot_data, positive_dataset) {
+  filter_with_cdhit(
+    generate_negative_dataset_11(sequences = sequences,
+                                 uniprot_data = uniprot_data,
+                                 positive_dataset = positive_dataset),
+    0.4)
+}
