@@ -2,7 +2,7 @@
 \centering
 \begin{tabular}{lllll}
   \hline
-doi & Implementation of the negative dataset generation algorithm & Comment if algorithm not implemented & Implementation of the model architecture & Comment if model not implemented \\ 
+doi & Implementation of the negative dataset sampling algorithm & Comment if algorithm not implemented & Implementation of the model architecture & Comment if model not implemented \\ 
   \hline
 10.1002/bip.22066 & No & Requires usage of Phobius & No & Requires usage of Tango software \\ 
   10.1016/j.ab.2013.01.019 & Yes &  & Yes &  \\ 
