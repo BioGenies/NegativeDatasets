@@ -17,3 +17,9 @@ positive_dataset <- read_fasta("./data/positive_dataset.fa")
 
 exemplary_negative_dataset <- generate_negative_dataset_2(sequences, uniprot_data, positive_dataset) %>% 
   setNames(paste0(names(.), "_AMP=0"))
+
+exemplary_train <- c(sample(positive_dataset, 0.8*length(positive_dataset)),
+                     sample(exemplary_negative_dataset, 0.8*length(positive_dataset)))
+                     
+exemplary_test <- c(positive_dataset[which(!(positive_dataset %in% exemplary_train))],
+                    exemplary_negative_dataset[which(!(exemplary_negative_dataset %in% exemplary_train))])
