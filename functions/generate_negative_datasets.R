@@ -14,7 +14,7 @@ generate_negative_dataset_1 <- function(sequences, uniprot_data, positive_datase
 
 
 # SVM-LZ 2nd dataset
-generate_negative_dataset_2 <- function(sequences, positive_dataset) {
+generate_negative_dataset_2 <- function(sequences, uniprot_data, positive_dataset) {
   filter_with_cdhit(
     filter_nonstandard_aa(
       generate_cutted_sequences(
