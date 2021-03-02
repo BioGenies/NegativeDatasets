@@ -17,6 +17,19 @@
 #' )
 #' lapply(X, grey_model_1_1)
 #' 
+#' # If we have a tibble with data and want to append columns
+#' # created with grey model:
+#' data <- tibble(Ala = c(3, 6, 2), Gly = c(3, 1, 3))
+#' # Each element of a list is a vector of some statistic
+#' # (e.g. hydrophobicity) for given sequence:
+#' stats <- list(c(1, 6, 3, 7), c(2, 0, 0, 4, 0), 6:14)
+#' # Transposition and vapply are the safest way to bind cols
+#' # However, names have to be updated still
+#' bind_cols(
+#'   data,
+#'   t(vapply(stats, grey_model_1_1, FUN.VALUE = numeric(2)))
+#' )
+#' 
 #' @noRd
 grey_model_1_1 <- function(row) {
   # First we compute first-order AGO
