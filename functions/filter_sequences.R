@@ -25,10 +25,10 @@ filter_by_lengths <- function(sequences, min_len, max_len) {
 # -n 4 for thresholds 0.6 ~ 0.7
 # -n 3 for thresholds 0.5 ~ 0.6
 # -n 2 for thresholds 0.4 ~ 0.5
-filter_with_cdhit <- function(sequences, threshold, word_length = 2, cdhit_path = "./third-party", l = 10) {
+filter_with_cdhit <- function(sequences, threshold, word_length = 2, cdhit_path = "./third-party", l = 10, n_threads = 1) {
   input <- tempfile(tmpdir = getwd())
   output <- tempfile(tmpdir = getwd())
-  cdhit <- paste0(cdhit_path, "/cdhit -i ", input,  " -o ", output, " -c ", threshold, " -n ", word_length, " -l ", l)
+  cdhit <- paste0(cdhit_path, "/cdhit -i ", input,  " -o ", output, " -c ", threshold, " -n ", word_length, " -l ", l, " -T ", n_threads)
   write_fasta(sequences, input)
   system(cdhit)
   res <- read_fasta(output)

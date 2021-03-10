@@ -18,7 +18,7 @@ generate_negative_dataset_2 <- function(sequences, positive_dataset) {
     filter_by_lengths(
       filter_nonstandard_aa(
         filter_out_positive_sequences(
-          filter_with_cdhit(sequences, 0.9),
+          filter_with_cdhit(sequences, 0.9, n_threads = 12),
           positive_dataset)),
       51, 500),
     10*length(positive_dataset))
@@ -32,7 +32,7 @@ generate_negative_dataset_3 <- function(sequences, positive_dataset) {
   seqs <- filter_nonstandard_aa(
     filter_by_lengths(
       filter_out_positive_sequences(
-        filter_with_cdhit(sequences, 0.9),
+        filter_with_cdhit(sequences, 0.9, n_threads = 12),
         positive_dataset),
       11, 39))
   names(seqs) <- paste0("Seq", 1:length(seqs), "_sampling_method=3_AMP=0")
@@ -135,7 +135,7 @@ generate_negative_dataset_9 <- function(sequences, uniprot_data, positive_datase
         filter_by_lengths(
           filter_by_annotations(
             filter_by_location(sequences, uniprot_data, "Cytoplasm"),
-            uniprot_dat,
+            uniprot_data,
             c("Antimicrobial", "Antiviral", "Antibiotic", "Fungicide", "Secreted")),
           10, max(lengths(sequences)))),
       positive_dataset),
@@ -154,6 +154,7 @@ generate_negative_dataset_10 <- function(sequences, uniprot_data, positive_datas
                               uniprot_data = uniprot_data,
                               keywords_vec = "Antimicrobial",
                               exclude = TRUE),
+        uniprot_data = uniprot_data,
         location = "Cytoplasm|Endoplasmic reticulum|Mitochondrion|Golgi")),
     6*lengths(positive_dataset))
   names(seqs) <- paste0("Seq", 1:length(seqs), "_sampling_method=10_AMP=0")
