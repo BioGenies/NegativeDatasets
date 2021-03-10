@@ -13,12 +13,12 @@ generate_negative_dataset_1 <- function(sequences, uniprot_data) {
 
 
 # ampir (precursor)
-generate_negative_dataset_2 <- function(sequences, positive_dataset) {
+generate_negative_dataset_2 <- function(sequences, positive_dataset, n_threads = 1) {
   seqs <- filter_random_sequences(
     filter_by_lengths(
       filter_nonstandard_aa(
         filter_out_positive_sequences(
-          filter_with_cdhit(sequences, 0.9, n_threads = 12),
+          filter_with_cdhit(sequences, 0.9, n_threads = n_threads),
           positive_dataset)),
       51, 500),
     10*length(positive_dataset))
@@ -28,11 +28,11 @@ generate_negative_dataset_2 <- function(sequences, positive_dataset) {
 
 
 # ampir (mature)
-generate_negative_dataset_3 <- function(sequences, positive_dataset) {
+generate_negative_dataset_3 <- function(sequences, positive_dataset, n_threads = 1) {
   seqs <- filter_nonstandard_aa(
     filter_by_lengths(
       filter_out_positive_sequences(
-        filter_with_cdhit(sequences, 0.9, n_threads = 12),
+        filter_with_cdhit(sequences, 0.9, n_threads = n_threads),
         positive_dataset),
       11, 39))
   names(seqs) <- paste0("Seq", 1:length(seqs), "_sampling_method=3_AMP=0")

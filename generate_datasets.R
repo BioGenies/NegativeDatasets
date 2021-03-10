@@ -36,7 +36,8 @@ for (i in 1:5) {
   # Sampling algorithms that need only sequences and positive dataset
   benchmark_2_3 <- lapply(paste0("generate_negative_dataset_", 2:3), function(ith_fun) {
     s <- match.fun(ith_fun)(sequences = uniprot_seqs, 
-                            positive_dataset = positive_traintest)
+                            positive_dataset = positive_traintest,
+                            n_threads = 12)
     write_fasta(c(positive_traintest, s), paste0(data_path, "Datasets/Training_method", last(strsplit(ith_fun, "_")[[1]]), "_rep", i, ".fasta"))
     match.fun(ith_fun)(sequences = uniprot_seqs, 
                        positive_dataset = positive_traintest)
