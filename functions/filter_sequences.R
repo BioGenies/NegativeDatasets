@@ -56,7 +56,7 @@ generate_cutted_sequences <- function(sequences, lens, excluded_aa = NULL) {
     seq_vec <- unlist(sequences, use.names = FALSE)
   } else {
     seq_vec <- unlist(sequences, use.names = FALSE)
-    seq_vec[which(seq_vec != excluded_aa)]
+    seq_vec <- seq_vec[which(seq_vec != excluded_aa)]
   }
 
   end_vec <- unname(cumsum(sample(lens)))
