@@ -40,7 +40,7 @@ for (i in 1:5) {
                             n_threads = 12)
     write_fasta(c(positive_traintest, s), paste0(data_path, "Datasets/Training_method", last(strsplit(ith_fun, "_")[[1]]), "_rep", i, ".fasta"))
     match.fun(ith_fun)(sequences = uniprot_seqs, 
-                       positive_dataset = positive_traintest)
+                       positive_dataset = positive_benchmark)
   })
   
   # Sampling algorithms that need sequences, uniprot data and positive dataset
@@ -49,7 +49,10 @@ for (i in 1:5) {
                             uniprot_data = uniprot_tab,
                             positive_dataset = positive_traintest)
     write_fasta(c(positive_traintest, s), paste0(data_path, "Datasets/Training_method", last(strsplit(ith_fun, "_")[[1]]), "_rep", i, ".fasta"))
-  })
+    match.fun(ith_fun)(sequences = uniprot_seqs,
+                       uniprot_data = uniprot_tab,
+                       positive_dataset = positive_benchmark)
+    })
   
   # Sampling algorithm that needs sequences, uniprot data, positive dataset and putative AMPs
   s12 <- generate_negative_dataset_12(sequences = uniprot_seqs,
@@ -62,7 +65,7 @@ for (i in 1:5) {
                                              uniprot_data = uniprot_tab) 
   benchmark_12 <- generate_negative_dataset_12(sequences = uniprot_seqs,
                                                uniprot_data = uniprot_tab,
-                                               positive_dataset = positive_traintest,
+                                               positive_dataset = positive_benchmark,
                                                potential_AMPs = putative_amps)
   
   benchmark_all <- c(positive_benchmark,
