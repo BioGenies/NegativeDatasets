@@ -1,0 +1,220 @@
+---
+title: "Negative dataset comparison"
+author: "Katarzyna Sidorczuk"
+date: "3/26/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.width = 12, fig.height = 8, message = FALSE)
+
+library(biogram)
+library(ggplot2)
+library(tidyr)
+library(ggbiplot)
+library(dplyr)
+
+encode_seq <- function(x, property) {
+  sapply(x, function(ith_seq) {
+    mean(aaprop[property, tolower(ith_seq)])
+  })
+}
+
+
+props <- data.frame(prop = c("BIGC670101", "ARGP820101", "CHAM820101", "CHOP780201", "CHOP780202", 
+                             "CHOP780203", "FASG760101", "FASG760104", "FASG760105", "FAUJ880103", 
+                             "KLEP840101", "KYTJ820101", "ZIMJ680103", "ENGD860101", "FASG890101"),
+                    description = c("Residue volume (Bigelow, 1967)", "Hydrophobicity index (Argos et al., 1982)",
+                                    "Polarizability parameter (Charton-Charton, 1982)", "Normalized frequency of alpha-helix (Chou-Fasman, 1978b)",
+                                    "Normalized frequency of beta-sheet (Chou-Fasman, 1978b)", "Normalized frequency of beta-turn (Chou-Fasman, 1978b)",
+                                    "Molecular weight (Fasman, 1976)", "pK-N (Fasman, 1976)", "pK-C (Fasman, 1976)", 
+                                    "Normalized van der Waals volume (Fauchere et al., 1988)", "Net charge (Klein et al., 1984)",
+                                    "Hydropathy index (Kyte-Doolittle, 1982)", "Polarity (Zimmerman et al., 1968)",
+                                    "Hydrophobicity index (Engelman et al., 1986)", "Hydrophobicity index (Fasman, 1989)"))
+
+data_path <- "/media/kasia/Data/Dropbox/Projekty/BioNgramProjects/NegativeDatasets/Datasets/"
+
+df <- lapply(1:12, function(i) {
+  lapply(1:5, function(j) {
+    ds <- read_fasta(paste0(data_path, "Training_method", i, "_rep", j, ".fasta"))
+    ds_neg <- ds[which(grepl("AMP=0", names(ds)))]
+    data.frame(prot = names(ds_neg),
+               method = paste0("Method ", i),
+               rep = paste0("Repetition ", j),
+               len = lengths(ds_neg),
+               BIGC670101 = encode_seq(ds_neg, "BIGC670101"),
+               ARGP820101 = encode_seq(ds_neg, "ARGP820101"),
+               CHAM820101 = encode_seq(ds_neg, "CHAM820101"),
+               CHOP780201 = encode_seq(ds_neg, "CHOP780201"),
+               CHOP780202 = encode_seq(ds_neg, "CHOP780202"),
+               CHOP780203 = encode_seq(ds_neg, "CHOP780203"),
+               FASG760101 = encode_seq(ds_neg, "FASG760101"),
+               FASG760104 = encode_seq(ds_neg, "FASG760104"),
+               FASG760105 = encode_seq(ds_neg, "FASG760105"),
+               FAUJ880103 = encode_seq(ds_neg, "FAUJ880103"),
+               KLEP840101 = encode_seq(ds_neg, "KLEP840101"),
+               KYTJ820101 = encode_seq(ds_neg, "KYTJ820101"),
+               ZIMJ680103 = encode_seq(ds_neg, "ZIMJ680103"),
+               ENGD860101 = encode_seq(ds_neg, "ENGD860101"),
+               FASG890101 = encode_seq(ds_neg, "FASG890101"))
+  }) %>% bind_rows()
+}) %>% bind_rows() %>%
+  mutate(method = factor(method, levels = c("Method 1", "Method 2", "Method 3", "Method 4", "Method 5", "Method 6",
+                                            "Method 7", "Method 8", "Method 9", "Method 10", "Method 11", "Method 12")))
+# save(df, file = "data.rda")
+# load("data.rda")
+
+```
+
+## Datasets
+
+- 12 methods of sampling
+- 5 repetitions
+
+## Numbers of sequences
+
+```{r}
+df %>% 
+  group_by(method, rep) %>% 
+  summarise(n = n()) %>% 
+  pivot_wider(names_from = "rep", values_from = "n") %>% 
+  knitr::kable()
+```
+
+## Sequence length distributions
+
+```{r}
+ggplot(df, aes(x = rep, y = len)) +
+  geom_violin(fill = "lightblue") +
+  facet_wrap(~method, scales = "free", ncol = 3) +
+  xlab("Repetition") +
+  ylab("Length") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## Amino acid composition
+
+```{r fig.height = 10}
+aa_comp <- lapply(1:12, function(i) {
+  lapply(1:5, function(j) {
+    ds <- read_fasta(paste0(data_path, "Training_method", i, "_rep", j, ".fasta"))
+    aa <- unlist(ds[which(grepl("AMP=0", names(ds)))], use.names = FALSE)
+    as.data.frame(table(aa)/length(aa)) %>% 
+      mutate(method = paste0("Method ", i),
+             rep = paste0("Repetition ", j))
+  }) %>% bind_rows()
+}) %>% bind_rows()  %>%
+  mutate(method = factor(method, levels = c("Method 1", "Method 2", "Method 3", "Method 4", "Method 5", "Method 6",
+                                            "Method 7", "Method 8", "Method 9", "Method 10", "Method 11", "Method 12")))
+
+aa_comp %>% 
+  group_by(method, aa) %>% 
+  summarise(Frequency = mean(Freq), sd = sd(Freq)) %>% 
+  ggplot(aes(x = aa, y = Frequency)) +
+  geom_col(fill = "lightblue") +
+  facet_wrap(~method, nrow = 4) +
+  geom_errorbar(aes(ymin = Frequency - sd, ymax = Frequency + sd), width=.2,
+                position=position_dodge(.9)) + 
+  theme_bw() +
+  ggtitle("Amino acid composition of datasets generated using different sampling methods")
+```
+
+```{r fig.height = 10}
+aa_comp %>% 
+  group_by(aa, method) %>% 
+  dplyr::summarise(Frequency = mean(Freq), sd = sd(Freq)) %>% 
+  ggplot(aes(x = method, y = Frequency)) +
+  geom_col(fill = "lightblue") +
+  facet_wrap(~aa, nrow = 4) +
+  geom_errorbar(aes(ymin = Frequency - sd, ymax = Frequency + sd), width = 0.2,
+                position = position_dodge(0.9)) + 
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Differences in amino acid frequency using different sampling methods")
+```
+
+```{r}
+aa_comp %>% 
+  group_by(method, aa) %>% 
+  summarise(Frequency = mean(Freq), sd = sd(Freq)) %>% 
+  group_by(aa) %>% 
+  summarise(Freq = mean(Frequency),
+            sd = sd(Frequency)) %>% 
+  ggplot(aes(x = aa, y = Freq)) +
+  geom_col(fill = "lightblue") +
+  geom_errorbar(aes(ymin = Freq - sd, ymax = Freq + sd), width = 0.2,
+                position = position_dodge(0.9)) + 
+  theme_bw() +
+  ggtitle("Amino acid composition across all datasets generated using different sampling methods")
+
+```
+
+```{r}
+pca_data <- aa_comp %>% 
+  pivot_wider(names_from = aa, values_from = Freq, values_fill = 0)
+
+pca_res <- prcomp(pca_data[, 3:ncol(pca_data)], center = TRUE, scale = TRUE)
+
+ggbiplot(pca_res, choices = 1:2, groups = pca_data[["method"]]) +
+  ggtitle("PCA on amino acid composition") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+## Selected physicochemical properties
+
+```{r}
+knitr::kable(props)
+```
+
+
+## Physicochemical properties distribution
+
+```{r}
+lapply(props[["prop"]], function(ith_prop) {
+  plot_dat <- df[, c("prot", "method", "rep", ith_prop)] %>% 
+    setNames(c("prot", "Method", "Repetition", "Property"))
+  ggplot(plot_dat, aes(x = Repetition, y = Property)) +
+    geom_violin(fill = "lightblue") +
+    facet_wrap(~Method, ncol = 3) +
+    ggtitle(props[["description"]][which(props[["prop"]] == ith_prop)]) + 
+    xlab(NULL) +
+    ylab(NULL) +
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(angle = 45, hjust = 1))
+})
+
+```
+
+
+```{r}
+props <- lapply(1:12, function(i) {
+  lapply(1:5, function(j) {
+    data.frame(t(colMeans(filter(df, method == paste0("Method ", i), rep == paste0("Repetition ", j))[, 5:ncol(df)]))) %>% 
+      mutate(method = factor(i),
+             repetition = factor(j))
+  }) %>% bind_rows()
+}) %>% bind_rows()
+
+pca_prop_res <- prcomp(props[, 1:(ncol(props)-2)], center = TRUE, scale = TRUE)
+
+ggbiplot(pca_prop_res, choices = 1:2, groups = props[["method"]]) +
+  ggtitle("PCA on means of physicochemical properties") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+```{r}
+df %>% 
+  ggplot(aes(x = ARGP820101, y = KLEP840101, color = rep, fill = rep)) +
+  geom_jitter(aes(alpha = 0.05)) +
+  stat_density_2d(aes(alpha = ..level..), geom = "polygon", color = "black", size = 0.1, adjust = 1/2) +
+  facet_wrap(~method) +
+  theme_bw() +
+  xlab("Hydrophobicity index (Argos et al., 1982)") +
+  ylab("Net charge (Klein et al., 1984)")
+```
+
