@@ -13,6 +13,7 @@ library(ggplot2)
 library(tidyr)
 library(ggbiplot)
 library(dplyr)
+library(seqR)
 
 encode_seq <- function(x, property) {
   sapply(x, function(ith_seq) {
@@ -34,35 +35,35 @@ props <- data.frame(prop = c("BIGC670101", "ARGP820101", "CHAM820101", "CHOP7802
 
 data_path <- "/media/kasia/Data/Dropbox/Projekty/BioNgramProjects/NegativeDatasets/Datasets/"
 
-df <- lapply(1:12, function(i) {
-  lapply(1:5, function(j) {
-    ds <- read_fasta(paste0(data_path, "Training_method", i, "_rep", j, ".fasta"))
-    ds_neg <- ds[which(grepl("AMP=0", names(ds)))]
-    data.frame(prot = names(ds_neg),
-               method = paste0("Method ", i),
-               rep = paste0("Repetition ", j),
-               len = lengths(ds_neg),
-               BIGC670101 = encode_seq(ds_neg, "BIGC670101"),
-               ARGP820101 = encode_seq(ds_neg, "ARGP820101"),
-               CHAM820101 = encode_seq(ds_neg, "CHAM820101"),
-               CHOP780201 = encode_seq(ds_neg, "CHOP780201"),
-               CHOP780202 = encode_seq(ds_neg, "CHOP780202"),
-               CHOP780203 = encode_seq(ds_neg, "CHOP780203"),
-               FASG760101 = encode_seq(ds_neg, "FASG760101"),
-               FASG760104 = encode_seq(ds_neg, "FASG760104"),
-               FASG760105 = encode_seq(ds_neg, "FASG760105"),
-               FAUJ880103 = encode_seq(ds_neg, "FAUJ880103"),
-               KLEP840101 = encode_seq(ds_neg, "KLEP840101"),
-               KYTJ820101 = encode_seq(ds_neg, "KYTJ820101"),
-               ZIMJ680103 = encode_seq(ds_neg, "ZIMJ680103"),
-               ENGD860101 = encode_seq(ds_neg, "ENGD860101"),
-               FASG890101 = encode_seq(ds_neg, "FASG890101"))
-  }) %>% bind_rows()
-}) %>% bind_rows() %>%
-  mutate(method = factor(method, levels = c("Method 1", "Method 2", "Method 3", "Method 4", "Method 5", "Method 6",
-                                            "Method 7", "Method 8", "Method 9", "Method 10", "Method 11", "Method 12")))
+# df <- lapply(1:12, function(i) {
+#   lapply(1:5, function(j) {
+#     ds <- read_fasta(paste0(data_path, "Training_method", i, "_rep", j, ".fasta"))
+#     ds_neg <- ds[which(grepl("AMP=0", names(ds)))]
+#     data.frame(prot = names(ds_neg),
+#                method = paste0("Method ", i),
+#                rep = paste0("Repetition ", j),
+#                len = lengths(ds_neg),
+#                BIGC670101 = encode_seq(ds_neg, "BIGC670101"),
+#                ARGP820101 = encode_seq(ds_neg, "ARGP820101"),
+#                CHAM820101 = encode_seq(ds_neg, "CHAM820101"),
+#                CHOP780201 = encode_seq(ds_neg, "CHOP780201"),
+#                CHOP780202 = encode_seq(ds_neg, "CHOP780202"),
+#                CHOP780203 = encode_seq(ds_neg, "CHOP780203"),
+#                FASG760101 = encode_seq(ds_neg, "FASG760101"),
+#                FASG760104 = encode_seq(ds_neg, "FASG760104"),
+#                FASG760105 = encode_seq(ds_neg, "FASG760105"),
+#                FAUJ880103 = encode_seq(ds_neg, "FAUJ880103"),
+#                KLEP840101 = encode_seq(ds_neg, "KLEP840101"),
+#                KYTJ820101 = encode_seq(ds_neg, "KYTJ820101"),
+#                ZIMJ680103 = encode_seq(ds_neg, "ZIMJ680103"),
+#                ENGD860101 = encode_seq(ds_neg, "ENGD860101"),
+#                FASG890101 = encode_seq(ds_neg, "FASG890101"))
+#   }) %>% bind_rows()
+# }) %>% bind_rows() %>%
+#   mutate(method = factor(method, levels = c("Method 1", "Method 2", "Method 3", "Method 4", "Method 5", "Method 6",
+#                                             "Method 7", "Method 8", "Method 9", "Method 10", "Method 11", "Method 12")))
 # save(df, file = "data.rda")
-# load("data.rda")
+load("data.rda")
 
 ```
 
@@ -160,6 +161,45 @@ ggbiplot(pca_res, choices = 1:2, groups = pca_data[["method"]]) +
   ggtitle("PCA on amino acid composition") +
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+## Bigram composition
+
+```{r  fig.height = 10}
+bigrams <- lapply(1:12, function(i) {
+  lapply(1:5, function(j) {
+    ds <- read_fasta(paste0(data_path, "Training_method", i, "_rep", j, ".fasta"))
+    seqs <- ds[which(grepl("AMP=0", names(ds)))]
+    
+    ngrams <- lapply(seq_along(seqs), function(k) {
+      count_multimers(seqs[[k]], 
+                      k_vector = c(2,2), 
+                      kmer_gaps_list = list(NULL, 1), 
+                      alphabet = toupper(colnames(biogram::aaprop)))  %>% 
+        as.matrix() %>% 
+        as.data.frame()
+    }) %>% bind_rows()
+      
+    ngrams[is.na(ngrams)] <- 0
+    
+    s <- colSums(ngrams) 
+    data.frame(t(s/sum(s))) %>% 
+      mutate(method = paste0("Method ", i),
+             rep = paste0("Repetition ", j))
+    
+  }) %>% bind_rows()
+}) %>% bind_rows %>%
+  mutate(method = factor(method, levels = c("Method 1", "Method 2", "Method 3", "Method 4", "Method 5", "Method 6",
+                                            "Method 7", "Method 8", "Method 9", "Method 10", "Method 11", "Method 12")))
+
+pca_bigram_res <- prcomp(bigrams[, 1:(ncol(bigrams)-2)], center = TRUE, scale = TRUE)
+
+ggbiplot(pca_bigram_res, choices = 1:2, groups = bigrams[["method"]], var.axes = FALSE) +
+  ggtitle("PCA on bigram composition") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5))
+
 ```
 
 ## Selected physicochemical properties
