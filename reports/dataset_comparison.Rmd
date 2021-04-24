@@ -33,7 +33,14 @@ props <- data.frame(prop = c("BIGC670101", "ARGP820101", "CHAM820101", "CHOP7802
                                     "Hydropathy index (Kyte-Doolittle, 1982)", "Polarity (Zimmerman et al., 1968)",
                                     "Hydrophobicity index (Engelman et al., 1986)", "Hydrophobicity index (Fasman, 1989)"))
 
-data_path <- "/media/kasia/Data/Dropbox/Projekty/BioNgramProjects/NegativeDatasets/Datasets/"
+if(Sys.info()[["nodename"]] %in% c("amyloid", "phobos", "huawei")) {
+  data_path <- "/home/michal/Dropbox/BioNgramProjects/NegativeDatasets/Datasets/"
+}
+if(Sys.info()[["nodename"]] %in% c("kasia-MACH-WX9", "ryzen")) {
+  data_path <- data_path <- "/media/kasia/Data/Dropbox/Projekty/BioNgramProjects/NegativeDatasets/Datasets/"
+}
+
+
 
 # df <- lapply(1:12, function(i) {
 #   lapply(1:5, function(j) {
