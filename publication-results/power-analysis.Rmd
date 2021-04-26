@@ -1,0 +1,98 @@
+---
+title: "Testing power of a Mann-Whitney U-test"
+author: "Katarzyna Sidorczuk"
+date: "4/26/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(biogram)
+library(dplyr)
+
+generate_sequences <- function(n_seq, alphabet, probs, min_len = 50, max_len = 100) {
+  lapply(1:n_seq, function(i) {
+    len <- sample(min_len:max_len, 1)
+    sample(alphabet, len, replace = TRUE, prob = probs)
+  })
+}
+
+
+
+test_power <- function(fun_name, aa, aa_comp1, aa_comp2, dataset_size, p_adjustment = "BH", ...) {
+  seqs1 <- generate_sequences(dataset_size, aa, aa_comp_1) %>% 
+    setNames(paste0("Set1_", 1:dataset_size))
+  seqs2 <- generate_sequences(dataset_size, aa, aa_comp2) %>% 
+    setNames(paste0("Set2_", 1:dataset_size))
+  datasets <- list("Dataset1" = seqs1, "Dataset2" = seqs2)
+  aa_comp <- lapply(names(datasets), function(ith_set) {
+    lapply(names(datasets[[ith_set]]), function(ith_prot) {
+      aa <- unlist(datasets[[ith_set]][[ith_prot]], use.names = FALSE)
+      data.frame(table(factor(aa, levels = c("A", "C", "D", "E", "F", "G", "H", 
+                                             "I", "K", "L", "M", "N", "P", "Q", 
+                                             "R", "S", "T", "V", "W", "Y")))/length(aa)) %>% 
+        setNames(c("Amino acid", "Frequency"))  %>% 
+        mutate(seq_name = ith_prot,
+               Dataset = ith_set)
+    }) %>% bind_rows()
+  }) %>% bind_rows()
+  
+  lapply(toupper(colnames(biogram::aaprop)), function(ith_aa) {
+    data.frame(
+      aa = ith_aa,
+      pval = match.fun(fun_name)(x = filter(aa_comp, Dataset == "Dataset1" & `Amino acid` == ith_aa)[["Frequency"]],
+                         y = filter(aa_comp, Dataset == "Dataset2" & `Amino acid` == ith_aa)[["Frequency"]],
+                         ...)[["p.value"]]
+    ) %>% mutate(pval_adjusted = p.adjust(pval, p_adjustment))
+  }) %>% bind_rows()
+}
+
+```
+
+### Amino acid distributions used in the simulation
+
+Three distributions of amino acids were used for testing:
+
+- ```aa_comp_1``` - all amino acids with equal probabilities
+- ```aa_comp_2``` - various probabilities of amino acid occurences (very high for some and very low for others)
+- ```aa_comp_3``` - small differences between amino acid probabilities
+
+The default *p*-value adjustment method is Benjamini-Hochberg correction. 
+
+```{r}
+aa <- toupper(colnames(biogram::aaprop))
+
+aa_comp_1 <- rep(0.05, 20)
+aa_comp_2 <- c(rep(0.1, 2), rep(0.01, 6), rep(0.025, 3), 0.3, rep(0.08, 3), rep(0.04, 3), rep(0.0025, 2))
+aa_comp_3 <- c(rep(0.06, 5), rep(0.05, 10), rep(0.04, 5))
+```
+
+### Equal probabilities vs. large differences in probabilities, 1000 peptides
+
+```{r}
+test_power("wilcox.test", aa, aa_comp_1, aa_comp_2, 1000, exact = FALSE)
+```
+
+### Equal probabilities vs. large differences in probabilities, 4000 peptides
+```{r}
+test_power("wilcox.test", aa, aa_comp_1, aa_comp_2, 4000, exact = FALSE)
+```
+
+### Equal probabilities vs. small differences in probabilities, 1000 peptides
+```{r}
+test_power("wilcox.test", aa, aa_comp_1, aa_comp_3, 1000, exact = FALSE)
+```
+
+### Equal probabilities vs. equal probabilities, 1000 peptides
+```{r}
+test_power("wilcox.test", aa, aa_comp_1, aa_comp_1, 1000, exact = FALSE)
+```
+
+### Equal probabilities vs. small differences in probabilities, 1000 peptides, Bonferroni adjustment
+```{r}
+test_power("wilcox.test", aa, aa_comp_1, aa_comp_2, 1000, exact = FALSE, adjustment = "bonferroni")
+```
+
+
+The above simulations show that Mann-Whitney U-test displays high sensitivity in detection of differences in amino acid composition, especially in large datasets. 
