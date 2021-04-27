@@ -14,6 +14,7 @@ library(tidyr)
 library(ggbiplot)
 library(dplyr)
 library(seqR)
+library(fmsb)
 
 encode_seq <- function(x, property) {
   sapply(x, function(ith_seq) {
@@ -37,7 +38,7 @@ if(Sys.info()[["nodename"]] %in% c("amyloid", "phobos", "huawei")) {
   data_path <- "/home/michal/Dropbox/BioNgramProjects/NegativeDatasets/Datasets/"
 }
 if(Sys.info()[["nodename"]] %in% c("kasia-MACH-WX9", "ryzen")) {
-  data_path <- data_path <- "/media/kasia/Data/Dropbox/Projekty/BioNgramProjects/NegativeDatasets/Datasets/"
+  data_path <- "/media/kasia/Data/Dropbox/Projekty/BioNgramProjects/NegativeDatasets/Datasets/"
 }
 
 
@@ -143,6 +144,39 @@ aa_comp %>%
 ```
 
 ```{r}
+colors_border <- c(rgb(0.18, 0.37, 0.68, 0.8), rgb(0.7, 0.66, 0.28, 0.8), rgb(0.27, 0.66, 0.34, 0.8), rgb(0.52, 0.27, 0.66, 0.8), rgb(0.66, 0.27, 0.27, 0.8))
+colors_fill <- c(rgb(0.18, 0.37, 0.68, 0.2), rgb(0.7, 0.66, 0.28, 0.2), rgb(0.27, 0.66, 0.34, 0.2), rgb(0.52, 0.27, 0.66, 0.2), rgb(0.66, 0.27, 0.27, 0.2))
+maxmin <- data.frame(A = c(0.12, 0), C = c(0.12, 0), D = c(0.12, 0), E = c(0.12, 0),
+                     F = c(0.12, 0), G = c(0.12, 0), H = c(0.12, 0), I = c(0.12, 0),
+                     K = c(0.12, 0), L = c(0.12, 0), M = c(0.12, 0), N = c(0.12, 0),
+                     P = c(0.12, 0), Q = c(0.12, 0), R = c(0.12, 0), S = c(0.12, 0), 
+                     T = c(0.12, 0), V = c(0.12, 0), W = c(0.12, 0), Y = c(0.12, 0))
+lapply(unique(aa_comp[["method"]]), function(ith_method) {
+  dat <- filter(aa_comp, method == ith_method) %>%
+    pivot_wider(names_from = aa, values_from = Freq) %>%
+    data.frame()
+  plot_dat <- bind_rows(maxmin, select(dat, -c(method, rep)))
+  plot_dat[is.na(plot_dat)] <- 0
+  rownames(plot_dat) <- c("min", "max", dat[["rep"]])
+  radarchart(plot_dat, axistype = 1,  pcol = colors_border, pfcol = colors_fill, seg = 3, cglcol = "grey30",
+             axislabcol = "black",  plty = 1, caxislabels = c(0, 0.4, 0.8, 0.12), title = ith_method)
+})
+```
+```{r}
+aa_comp %>% 
+  pivot_wider(names_from = "aa", values_from = "Freq", values_fill = 0) %>% 
+  mutate(Dataset = factor(unlist(sapply(1:12, function(i) paste0("M", i, "_rep", 1:5), simplify = FALSE)),
+                             levels = rev(unlist(sapply(1:12, function(i) paste0("M", i, "_rep", 1:5), simplify = FALSE))))) %>% 
+  select(-c(method, rep)) %>% 
+  pivot_longer(1:20, names_to = "Amino acid", values_to = "Frequency") %>% 
+  ggplot(aes(x = `Amino acid`, y = Dataset)) +
+  geom_tile(aes(fill = Frequency)) +
+  scale_fill_gradient2(low = "#ffffff", mid = "#ffe96b",  high = "#ff4242", midpoint = 0.05) +
+  theme_bw()
+
+```
+
+```{r}
 aa_comp %>% 
   group_by(method, aa) %>% 
   summarise(Frequency = mean(Freq), sd = sd(Freq)) %>% 
@@ -167,9 +201,15 @@ pca_res <- prcomp(pca_data[, 3:ncol(pca_data)], center = TRUE, scale = TRUE)
 ggbiplot(pca_res, choices = 1:2, groups = pca_data[["method"]]) +
   ggtitle("PCA on amino acid composition") +
   theme_bw() +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_color_brewer(palette = "Paired")
 ```
 
+## Statistical significance of differences between replicates of each sampling method
+
+```{r}
+
+```
 
 ## Bigram composition
 
@@ -200,12 +240,15 @@ bigrams <- lapply(1:12, function(i) {
   mutate(method = factor(method, levels = c("Method 1", "Method 2", "Method 3", "Method 4", "Method 5", "Method 6",
                                             "Method 7", "Method 8", "Method 9", "Method 10", "Method 11", "Method 12")))
 
+bigrams[is.na(bigrams)] <- 0 
+
 pca_bigram_res <- prcomp(bigrams[, 1:(ncol(bigrams)-2)], center = TRUE, scale = TRUE)
 
 ggbiplot(pca_bigram_res, choices = 1:2, groups = bigrams[["method"]], var.axes = FALSE) +
   ggtitle("PCA on bigram composition") +
   theme_bw() +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_color_brewer(palette = "Paired")
 
 ```
 
