@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, fig.width = 12, fig.height = 8, message = FALSE)
+knitr::opts_chunk$set(echo = FALSE, fig.width = 12, fig.height = 8, message = FALSE, warning = FALSE)
 
 library(biogram)
 library(ggplot2)
@@ -38,7 +38,7 @@ if(Sys.info()[["nodename"]] %in% c("amyloid", "phobos", "huawei")) {
   data_path <- "/home/michal/Dropbox/BioNgramProjects/NegativeDatasets/Datasets/"
 }
 if(Sys.info()[["nodename"]] %in% c("kasia-MACH-WX9", "ryzen")) {
-  data_path <- "/media/kasia/Data/Dropbox/Projekty/BioNgramProjects/NegativeDatasets/Datasets/"
+  data_path <- "~/Dropbox/Projekty/BioNgramProjects/NegativeDatasets/Datasets/"
 }
 
 
@@ -162,17 +162,37 @@ lapply(unique(aa_comp[["method"]]), function(ith_method) {
              axislabcol = "black",  plty = 1, caxislabels = c(0, 0.4, 0.8, 0.12), title = ith_method)
 })
 ```
+
 ```{r}
-aa_comp %>% 
+aa_comp_heatmap_dat <- aa_comp %>% 
   pivot_wider(names_from = "aa", values_from = "Freq", values_fill = 0) %>% 
   mutate(Dataset = factor(unlist(sapply(1:12, function(i) paste0("M", i, "_rep", 1:5), simplify = FALSE)),
-                             levels = rev(unlist(sapply(1:12, function(i) paste0("M", i, "_rep", 1:5), simplify = FALSE))))) %>% 
-  select(-c(method, rep)) %>% 
+                          levels = rev(unlist(sapply(1:12, function(i) paste0("M", i, "_rep", 1:5), simplify = FALSE))))) %>% 
+  select(-c(method, rep)) 
+
+aa_comp_heatmap_dat %>% 
   pivot_longer(1:20, names_to = "Amino acid", values_to = "Frequency") %>% 
   ggplot(aes(x = `Amino acid`, y = Dataset)) +
   geom_tile(aes(fill = Frequency)) +
   scale_fill_gradient2(low = "#ffffff", mid = "#ffe96b",  high = "#ff4242", midpoint = 0.05) +
-  theme_bw()
+  theme_bw() 
+
+clustering_methods <- as.dendrogram(hclust(dist(as.matrix(aa_comp_heatmap_dat[,1:20]))))
+methods_order <- order.dendrogram(clustering_methods)
+clustering_aa <- as.dendrogram(hclust(dist(t(as.matrix(aa_comp_heatmap_dat[,1:20])))))
+aa_order <- order.dendrogram(clustering_aa)
+
+aa_comp_clustered_dat <- pivot_longer(aa_comp_heatmap_dat, 1:20, names_to = "Amino acid", values_to = "Frequency")
+aa_comp_clustered_dat[["Amino acid"]] <- factor(aa_comp_clustered_dat[["Amino acid"]],
+                                                levels = colnames(aa_comp_heatmap_dat)[1:20][aa_order], ordered = TRUE)
+aa_comp_clustered_dat[["Dataset"]] <- factor(aa_comp_clustered_dat[["Dataset"]],
+                                             levels = aa_comp_heatmap_dat[["Dataset"]][methods_order], ordered = TRUE)
+
+aa_comp_clustered_dat %>% 
+  ggplot(aes(x = `Amino acid`, y = Dataset)) +
+  geom_tile(aes(fill = Frequency)) +
+  scale_fill_gradient2(low = "#ffffff", mid = "#ffe96b",  high = "#ff4242", midpoint = 0.05) +
+  theme_bw() 
 
 ```
 
@@ -208,7 +228,46 @@ ggbiplot(pca_res, choices = 1:2, groups = pca_data[["method"]]) +
 ## Statistical significance of differences between replicates of each sampling method
 
 ```{r}
+aa_comp_peptides <- lapply(1:12, function(i) {
+  lapply(1:5, function(j) {
+    ds <- read_fasta(paste0(data_path, "Training_method", i, "_rep", j, ".fasta"))
+    neg <- ds[which(grepl("AMP=0", names(ds)))]
+    lapply(names(neg), function(ith_prot) {
+      data.frame(table(factor(neg[[ith_prot]], levels = c("A", "C", "D", "E", "F", "G", "H", 
+                                                          "I", "K", "L", "M", "N", "P", "Q", 
+                                                          "R", "S", "T", "V", "W", "Y")))/length(neg[[ith_prot]])) %>% 
+        setNames(c("Amino acid", "Frequency"))  %>% 
+        mutate(seq_name = ith_prot,
+               method = paste0("Method ", i),
+               rep = paste0("rep", j))
+    }) %>% bind_rows()
+  }) %>% bind_rows()
+}) %>% bind_rows() %>% 
+  mutate(method = factor(method, levels = c("Method 1", "Method 2", "Method 3", "Method 4", "Method 5", "Method 6",
+                                            "Method 7", "Method 8", "Method 9", "Method 10", "Method 11", "Method 12")))
 
+combns <- combn(unique(aa_comp_peptides[["rep"]]), 2, simplify = FALSE)
+test_res <- lapply(unique(aa_comp_peptides[["method"]]), function(ith_method) {
+  lapply(seq_along(combns), function(ith_combn) {
+    test_dat <- filter(aa_comp_peptides, method == ith_method, rep %in% combns[[ith_combn]])
+    lapply(unique(aa_comp_peptides[["Amino acid"]]), function(ith_aa) {
+      data.frame(method = ith_method,
+                 comparison = paste0(combns[[ith_combn]][1], "_", combns[[ith_combn]][2]),
+                 aa = ith_aa,
+                 pval = wilcox.test(x = filter(test_dat, `Amino acid` == ith_aa, rep == combns[[ith_combn]][1])[["Frequency"]],
+                                    y = filter(test_dat, `Amino acid` == ith_aa, rep == combns[[ith_combn]][2])[["Frequency"]],
+                                    exact = FALSE)[["p.value"]]) 
+    }) %>% bind_rows() %>% 
+    mutate(pval_adjusted = p.adjust(pval))
+  }) %>% bind_rows()
+}) %>% bind_rows()
+
+test_res %>% 
+  select(-pval) %>% 
+  group_by(aa, method) %>% 
+  summarise(n_signif = sum(pval_adjusted < 0.05)) %>% 
+  ggplot(aes(x = aa, y = method, fill = n_signif)) +
+  geom_tile()
 ```
 
 ## Bigram composition

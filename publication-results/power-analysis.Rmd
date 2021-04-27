@@ -44,8 +44,9 @@ test_power <- function(fun_name, aa, aa_comp1, aa_comp2, dataset_size, p_adjustm
       pval = match.fun(fun_name)(x = filter(aa_comp, Dataset == "Dataset1" & `Amino acid` == ith_aa)[["Frequency"]],
                          y = filter(aa_comp, Dataset == "Dataset2" & `Amino acid` == ith_aa)[["Frequency"]],
                          ...)[["p.value"]]
-    ) %>% mutate(pval_adjusted = p.adjust(pval, p_adjustment))
-  }) %>% bind_rows()
+    )
+  }) %>% bind_rows() %>% 
+    mutate(pval_adjusted = p.adjust(pval, p_adjustment))
 }
 
 ```
