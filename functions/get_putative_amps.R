@@ -7,4 +7,5 @@ get_putative_amps <- function(data_path, keywords = c("Antimicrobial", "Antibact
   
   putative_amps <- filter_by_annotations(seqs, annot, keywords_vec = keywords, exclude = FALSE) 
   save(putative_amps, file = "data/putative_AMPs.rda")
+  putative_amps
 }
