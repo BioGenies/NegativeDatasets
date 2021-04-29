@@ -31,7 +31,7 @@ list(
     format = "file"),
   tar_target(
     positive_dataset,
-    get_positive_dataset("data/dbaasp.csv")),
+    generate_positive_dataset("data/dbaasp.csv")),
   tar_target(
     uniprot_seqs,
     read_uniprot_seqs(uniprot_seqs_file)),
@@ -40,7 +40,7 @@ list(
     read.delim(uniprot_tab_file)),
   tar_target(
     putative_amps,
-    get_putative_amps()),
+    get_putative_amps(data_path)),
   tar_target(
     holdouts,
     generate_holdout_groups(positive_dataset)),
