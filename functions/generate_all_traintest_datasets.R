@@ -16,7 +16,7 @@ generate_all_traintest_datasets <- function(data_path, seed_vector, n_rep, unipr
                                               positive_dataset = positive_traintest,
                                               n_threads = 12)
       write_fasta(c(positive_traintest, s), paste0(data_path, "Datasets/Training_method_", last(strsplit(ith_fun, "_")[[1]]), "_rep", i, ".fasta"))
-      match.fun(ith_fun)(sequences = uniprot_seqs, 
+      match.fun(gsub("-", "_", ith_fun))(sequences = uniprot_seqs, 
                          positive_dataset = positive_benchmark)
     })
     
