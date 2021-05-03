@@ -25,13 +25,13 @@ generate_negative_dataset_AmPEP <- function(sequences, uniprot_data) {
 }
 
 # ampir (precursor)
-generate_negative_dataset_ampir_precursor <- function(sequences, positive_dataset, n_threads = 1) {
+generate_negative_dataset_ampir_precursor <- function(sequences, positive_dataset, sequences_to_filter_out, n_threads = 1) {
   seqs <- filter_random_sequences(
     filter_by_lengths(
       filter_nonstandard_aa(
         filter_out_positive_sequences(
           filter_with_cdhit(sequences, 0.9, n_threads = n_threads),
-          positive_dataset)),
+          sequences_to_filter_out)),
       51, 500),
     10*length(positive_dataset))
   names(seqs) <- paste0("Seq", 1:length(seqs), "_sampling_method=ampir-precursor_AMP=0")
@@ -103,7 +103,7 @@ generate_negative_dataset_AmpGram <- function(sequences, uniprot_data, positive_
 
 
 # dbAMP
-generate_negative_dataset_dbAMP <- function(sequences, uniprot_data, positive_dataset) {
+generate_negative_dataset_dbAMP <- function(sequences, uniprot_data) {
   seqs <- filter_with_cdhit(
     filter_nonstandard_aa(
       filter_by_lengths(
