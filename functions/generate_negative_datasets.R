@@ -177,9 +177,9 @@ generate_negative_dataset_GabereNoble <- function(sequences, uniprot_data, posit
 # AMAP
 generate_negative_dataset_AMAP <- function(sequences, uniprot_data, positive_dataset) {
   seqs <- filter_with_cdhit(
-    generate_negative_dataset_10(sequences = sequences,
-                                 uniprot_data = uniprot_data,
-                                 positive_dataset = positive_dataset),
+    generate_negative_dataset_GabereNoble(sequences = sequences,
+                                          uniprot_data = uniprot_data,
+                                          positive_dataset = positive_dataset),
     0.4)
   names(seqs) <- paste0("Seq", 1:length(seqs), "_sampling_method=AMAP_AMP=0")
   seqs

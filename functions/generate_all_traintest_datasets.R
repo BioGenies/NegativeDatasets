@@ -24,12 +24,12 @@ generate_all_traintest_datasets <- function(data_path, seed_vector, n_rep, unipr
     # Sampling algorithm that need only sequences and positive dataset - ampir mature
     all_ampir_mature <- filter_nonstandard_aa(
       filter_by_lengths(
-        filter_with_cdhit(sequences = uniprot_seqs, threshold = 0.9, n_threads = n_threads),
+        filter_with_cdhit(sequences = uniprot_seqs, threshold = 0.9, n_threads = 20),
         11, 39))
-    s_ampir_mature <- sample(all_ampir_mature, 0.8*length(all_ampir_mature), replace = FALSE) %>% 
-      filter_out_positive_sequences(positive_traintest)
+    t_ampir_mature <- sample(all_ampir_mature, 0.8*length(all_ampir_mature), replace = FALSE) 
+    s_ampir_mature <- filter_out_positive_sequences(t_ampir_mature, positive_traintest)
     write_fasta(c(positive_traintest, s_ampir_mature), paste0(data_path, "Datasets/Training_method_ampir-mature_rep", i, ".fasta"))
-    benchmark_ampir_mature <- all_ampir_mature[which(!(names(all_ampir_mature) %in% names(s_ampir_mature)))] %>% 
+    benchmark_ampir_mature <- all_ampir_mature[which(!(names(all_ampir_mature) %in% names(t_ampir_mature)))] %>% 
       filter_out_positive_sequences(positive_benchmark)
     
     # Sampling algorithms that need sequences, uniprot data and positive dataset - CSAMPpred
