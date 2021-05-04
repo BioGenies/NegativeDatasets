@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(biogram)
 library(dplyr)
+library(ggplot2)
 
 generate_sequences <- function(n_seq, alphabet, probs, min_len = 50, max_len = 100) {
   lapply(1:n_seq, function(i) {
@@ -42,8 +43,8 @@ test_power <- function(fun_name, aa, aa_comp1, aa_comp2, dataset_size, p_adjustm
     data.frame(
       aa = ith_aa,
       pval = match.fun(fun_name)(x = filter(aa_comp, Dataset == "Dataset1" & `Amino acid` == ith_aa)[["Frequency"]],
-                         y = filter(aa_comp, Dataset == "Dataset2" & `Amino acid` == ith_aa)[["Frequency"]],
-                         ...)[["p.value"]]
+                                 y = filter(aa_comp, Dataset == "Dataset2" & `Amino acid` == ith_aa)[["Frequency"]],
+                                 ...)[["p.value"]]
     )
   }) %>% bind_rows() %>% 
     mutate(pval_adjusted = p.adjust(pval, p_adjustment))
@@ -55,9 +56,9 @@ test_power <- function(fun_name, aa, aa_comp1, aa_comp2, dataset_size, p_adjustm
 
 Three distributions of amino acids were used for testing:
 
-- ```aa_comp_1``` - all amino acids with equal probabilities
-- ```aa_comp_2``` - various probabilities of amino acid occurences (very high for some and very low for others)
-- ```aa_comp_3``` - small differences between amino acid probabilities
+- ```Dataset_1``` - all amino acids with equal probabilities
+- ```Dataset_2``` - various probabilities of amino acid occurences (very high for some and very low for others)
+- ```Dataset_3``` - small differences between amino acid probabilities
 
 The default *p*-value adjustment method is Benjamini-Hochberg correction. 
 
@@ -67,6 +68,7 @@ aa <- toupper(colnames(biogram::aaprop))
 aa_comp_1 <- rep(0.05, 20)
 aa_comp_2 <- c(rep(0.1, 2), rep(0.01, 6), rep(0.025, 3), 0.3, rep(0.08, 3), rep(0.04, 3), rep(0.0025, 2))
 aa_comp_3 <- c(rep(0.06, 5), rep(0.05, 10), rep(0.04, 5))
+
 ```
 
 ### Equal probabilities vs. large differences in probabilities, 1000 peptides
@@ -95,5 +97,49 @@ test_power("wilcox.test", aa, aa_comp_1, aa_comp_1, 1000, exact = FALSE)
 test_power("wilcox.test", aa, aa_comp_1, aa_comp_2, 1000, exact = FALSE, adjustment = "bonferroni")
 ```
 
+
+### Results of tests on all three datasets with 4000 peptides
+
+```{r echo = FALSE, message = FALSE, fig.height=3, fig.width = 10}
+seqs1 <- generate_sequences(4000, aa, aa_comp_1)
+seqs2 <- generate_sequences(4000, aa, aa_comp_2)
+seqs3 <- generate_sequences(4000, aa, aa_comp_3)
+
+datasets <- list("Dataset1" = seqs1, "Dataset2" = seqs2, "Dataset3" = seqs3)
+aa_comp <- lapply(names(datasets), function(ith_set) {
+  lapply(datasets[[ith_set]], function(ith_prot) {
+    aa <- unlist(ith_prot, use.names = FALSE)
+    data.frame(table(factor(aa, levels = c("A", "C", "D", "E", "F", "G", "H", 
+                                           "I", "K", "L", "M", "N", "P", "Q", 
+                                           "R", "S", "T", "V", "W", "Y")))/length(aa)) %>% 
+      setNames(c("Amino acid", "Frequency"))  %>% 
+      mutate(Dataset = ith_set)
+  }) %>% bind_rows()
+}) %>% bind_rows()
+
+
+combns <- combn(unique(aa_comp[["Dataset"]]), 2, simplify = FALSE)
+
+test_res <- lapply(seq_along(combns), function(ith_combn) {
+  test_dat <- filter(aa_comp, Dataset %in% combns[[ith_combn]])
+  lapply(unique(aa_comp[["Amino acid"]]), function(ith_aa) {
+    data.frame(comparison = paste0(combns[[ith_combn]][1], "_", combns[[ith_combn]][2]),
+               aa = ith_aa,
+               pval = wilcox.test(x = filter(test_dat, `Amino acid` == ith_aa, Dataset == combns[[ith_combn]][1])[["Frequency"]],
+                                  y = filter(test_dat, `Amino acid` == ith_aa, Dataset == combns[[ith_combn]][2])[["Frequency"]],
+                                  exact = FALSE)[["p.value"]]) 
+  }) %>% bind_rows() %>% 
+    mutate(pval_adjusted = p.adjust(pval))
+}) %>% bind_rows()
+
+
+test_res %>% 
+  select(-pval) %>% 
+  group_by(aa, comparison) %>% 
+  summarise(is_significant = as.logical(pval_adjusted < 0.05)) %>% 
+  ggplot(aes(x = aa, y = comparison, fill = is_significant)) +
+  geom_tile(color = "white") +
+  theme_bw()
+```
 
 The above simulations show that Mann-Whitney U-test displays high sensitivity in detection of differences in amino acid composition, especially in large datasets. 
