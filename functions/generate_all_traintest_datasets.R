@@ -26,8 +26,8 @@ generate_all_traintest_datasets <- function(data_path, seed_vector, n_rep, unipr
       filter_by_lengths(
         filter_with_cdhit(sequences = uniprot_seqs, threshold = 0.9, n_threads = 20),
         11, 39))
+    names(all_ampir_mature) <- paste0("Seq", 1:length(all_ampir_mature), "_sampling_method=ampir-mature_AMP=0")
     t_ampir_mature <- sample(all_ampir_mature, 0.8*length(all_ampir_mature), replace = FALSE) 
-    names(t_ampir_mature) <- paste0("Seq", 1:length(t_ampir_mature), "_sampling_method=ampir-mature_AMP=0")
     s_ampir_mature <- filter_out_positive_sequences(t_ampir_mature, positive_traintest)
     write_fasta(c(positive_traintest, s_ampir_mature), paste0(data_path, "Datasets/Training_method_ampir-mature_rep", i, ".fasta"))
     benchmark_ampir_mature <- all_ampir_mature[which(!(names(all_ampir_mature) %in% names(t_ampir_mature)))] %>% 
