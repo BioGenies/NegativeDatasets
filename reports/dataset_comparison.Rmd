@@ -98,10 +98,10 @@ df %>%
 
 ## Sequence length distributions
 
-```{r}
+```{r fig.height = 10}
 ggplot(df, aes(x = rep, y = len, group = rep)) +
   geom_violin(fill = "lightblue") +
-  facet_wrap(~method, ncol = 3) +
+  facet_wrap(~method, scales = "free", ncol = 3) +
   xlab("Repetition") +
   ylab("Length") +
   theme_bw() 
@@ -167,7 +167,7 @@ lapply(unique(aa_comp[["method"]]), function(ith_method) {
 })
 ```
 
-```{r}
+```{r fig.height = 10}
 aa_comp_heatmap_dat <- aa_comp %>% 
   pivot_wider(names_from = "aa", values_from = "Freq", values_fill = 0) %>% 
   mutate(Dataset = factor(unlist(sapply(methods, function(i) paste0(i, "_rep", 1:5), simplify = FALSE)))) %>% 
@@ -218,21 +218,6 @@ grob_list[["heatmap"]][["heights"]] <-
 grid.arrange(grob_list[["heatmap"]], grob_list[["dendrogram"]], widths = c(0.8, 0.2))
 ```
 
-```{r}
-aa_comp %>% 
-  group_by(method, aa) %>% 
-  summarise(Frequency = mean(Freq), sd = sd(Freq)) %>% 
-  group_by(aa) %>% 
-  summarise(Freq = mean(Frequency),
-            sd = sd(Frequency)) %>% 
-  ggplot(aes(x = aa, y = Freq)) +
-  geom_col(fill = "lightblue") +
-  geom_errorbar(aes(ymin = Freq - sd, ymax = Freq + sd), width = 0.2,
-                position = position_dodge(0.9)) + 
-  theme_bw() +
-  ggtitle("Amino acid composition across all datasets generated using different sampling methods")
-
-```
 
 ```{r}
 pca_data <- aa_comp %>% 
@@ -259,9 +244,8 @@ aa_comp_peptides <- lapply(methods, function(i) {
                                                           "I", "K", "L", "M", "N", "P", "Q",
                                                           "R", "S", "T", "V", "W", "Y")))/length(neg[[ith_prot]])) %>%
         setNames(c("Amino acid", "Frequency"))  %>%
-        mutate(seq_name = ith_prot,
-               method = paste0("Method ", i),
-               rep = paste0("rep", j))
+        mutate(method = i,
+               rep = j)
     }) %>% bind_rows()
   }) %>% bind_rows()
 }) %>% bind_rows()
@@ -337,7 +321,7 @@ knitr::kable(props)
 
 ## Physicochemical properties distribution
 
-```{r}
+```{r fig.height = 10}
 lapply(props[["prop"]], function(ith_prop) {
   plot_dat <- df[, c("prot", "method", "rep", ith_prop)] %>% 
     setNames(c("prot", "Method", "Repetition", "Property"))
@@ -372,7 +356,7 @@ ggbiplot(pca_prop_res, choices = 1:2, groups = props[["method"]]) +
 ```
 
 
-```{r}
+```{r fig.height = 10}
 df %>% 
   ggplot(aes(x = ARGP820101, y = KLEP840101, color = factor(rep), fill = factor(rep))) +
   geom_jitter(aes(alpha = 0.05)) +
