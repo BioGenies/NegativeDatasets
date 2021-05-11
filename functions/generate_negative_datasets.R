@@ -168,7 +168,7 @@ generate_negative_dataset_GabereNoble <- function(sequences, uniprot_data, posit
                               exclude = TRUE),
         uniprot_data = uniprot_data,
         location = "Cytoplasm|Endoplasmic reticulum|Mitochondrion|Golgi")),
-    6*lengths(positive_dataset))
+    rep(lengths(positive_dataset), 6))
   names(seqs) <- paste0("Seq", 1:length(seqs), "_sampling_method=Gabere&Noble_AMP=0")
   seqs
 }
@@ -177,9 +177,12 @@ generate_negative_dataset_GabereNoble <- function(sequences, uniprot_data, posit
 # AMAP
 generate_negative_dataset_AMAP <- function(sequences, uniprot_data, positive_dataset) {
   seqs <- filter_with_cdhit(
-    generate_negative_dataset_GabereNoble(sequences = sequences,
-                                          uniprot_data = uniprot_data,
-                                          positive_dataset = positive_dataset),
+    generate_cutted_sequences(
+      filter_nonstandard_aa(
+        filter_by_annotations(sequences,
+                              uniprot_data,
+                              "Antimicrobial")),
+      rep(lengths(positive_dataset), 6)), 
     0.4)
   names(seqs) <- paste0("Seq", 1:length(seqs), "_sampling_method=AMAP_AMP=0")
   seqs
