@@ -18,12 +18,7 @@ library(fmsb)
 library(ggdendro)
 library(gridExtra)
 
-encode_seq <- function(x, property) {
-  sapply(x, function(ith_seq) {
-    mean(aaprop[property, tolower(ith_seq)])
-  })
-}
-
+source("../functions/plot_functions.R")
 
 props <- data.frame(prop = c("BIGC670101", "ARGP820101", "CHAM820101", "CHOP780201", "CHOP780202", 
                              "CHOP780203", "FASG760101", "FASG760104", "FASG760105", "FAUJ880103", 
@@ -50,35 +45,12 @@ if(Sys.info()[["nodename"]] == "kasia-MACH-WX9") {
 methods <- c("iAMP2L", "AmPEP", "dbAMP", "ampir-precursor", "ampir-mature", "CSAMPPred", 
              "Wang", "AmpGram", "Witten", "AMPScannerV2", "GabereNoble", "AMAP", "AMPlify")
 
-# df <- lapply(methods, function(ith_method) {
-#   lapply(1:5, function(j) {
-#     ds <- read_fasta(paste0(data_path, "Training_method_", ith_method, "_rep", j, ".fasta"))
-#     ds_neg <- ds[which(grepl("AMP=0", names(ds)))]
-#     data.frame(prot = names(ds_neg),
-#                method = ith_method,
-#                rep = j,
-#                len = lengths(ds_neg),
-#                BIGC670101 = encode_seq(ds_neg, "BIGC670101"),
-#                ARGP820101 = encode_seq(ds_neg, "ARGP820101"),
-#                CHAM820101 = encode_seq(ds_neg, "CHAM820101"),
-#                CHOP780201 = encode_seq(ds_neg, "CHOP780201"),
-#                CHOP780202 = encode_seq(ds_neg, "CHOP780202"),
-#                CHOP780203 = encode_seq(ds_neg, "CHOP780203"),
-#                FASG760101 = encode_seq(ds_neg, "FASG760101"),
-#                FASG760104 = encode_seq(ds_neg, "FASG760104"),
-#                FASG760105 = encode_seq(ds_neg, "FASG760105"),
-#                FAUJ880103 = encode_seq(ds_neg, "FAUJ880103"),
-#                KLEP840101 = encode_seq(ds_neg, "KLEP840101"),
-#                KYTJ820101 = encode_seq(ds_neg, "KYTJ820101"),
-#                ZIMJ680103 = encode_seq(ds_neg, "ZIMJ680103"),
-#                ENGD860101 = encode_seq(ds_neg, "ENGD860101"),
-#                FASG890101 = encode_seq(ds_neg, "FASG890101"))
-#   }) %>% bind_rows()
-# }) %>% bind_rows()
+dataset_colors = c(AMAP = "#f2b176", AmPEP = "#b4b4b4", AmpGram = "#f27676", `ampir-mature` = "#76bef2",
+                   `ampir-precursor` = "#76eff2", AMPlify = "#f2d676", AMPScannerV2 = "#b976f2", Wang = "#80f276",
+                   CSAMPPred = "#76f2be", dbAMP = "#f276e8", GabereNoble = "#7688f2", iAMP2L = "#eff275", Witten = "#ccf276")
 
-# save(df, file = "data.rda")
-load("data.rda")
 
+df <- calculate_properties(methods, 5, data_path)
 ```
 
 ## Datasets
@@ -100,7 +72,7 @@ df %>%
 
 ```{r fig.height = 10}
 ggplot(df, aes(x = rep, y = len, group = rep)) +
-  geom_violin(fill = "lightblue") +
+  geom_violin(fill = "#76bef2") +
   facet_wrap(~method, scales = "free", ncol = 3) +
   xlab("Repetition") +
   ylab("Length") +
@@ -110,22 +82,14 @@ ggplot(df, aes(x = rep, y = len, group = rep)) +
 ## Amino acid composition
 
 ```{r fig.height = 10}
-aa_comp <- lapply(methods, function(i) {
-  lapply(1:5, function(j) {
-    ds <- read_fasta(paste0(data_path, "Training_method_", i, "_rep", j, ".fasta"))
-    aa <- unlist(ds[which(grepl("AMP=0", names(ds)))], use.names = FALSE)
-    as.data.frame(table(aa)/length(aa)) %>% 
-      mutate(method = i,
-             rep = j)
-  }) %>% bind_rows()
-}) %>% bind_rows()
+aa_comp <- calculate_aa_comp_datasets(methods, 5, data_path)
 
 
 aa_comp %>% 
   group_by(method, aa) %>% 
   summarise(Frequency = mean(Freq), sd = sd(Freq)) %>% 
   ggplot(aes(x = aa, y = Frequency)) +
-  geom_col(fill = "lightblue") +
+  geom_col(fill = "#76bef2") +
   facet_wrap(~method, nrow = 4) +
   geom_errorbar(aes(ymin = Frequency - sd, ymax = Frequency + sd), width=.2,
                 position=position_dodge(.9)) + 
@@ -138,7 +102,7 @@ aa_comp %>%
   group_by(aa, method) %>% 
   dplyr::summarise(Frequency = mean(Freq), sd = sd(Freq)) %>% 
   ggplot(aes(x = method, y = Frequency)) +
-  geom_col(fill = "lightblue") +
+  geom_col(fill = "#76bef2") +
   facet_wrap(~aa, nrow = 4) +
   geom_errorbar(aes(ymin = Frequency - sd, ymax = Frequency + sd), width = 0.2,
                 position = position_dodge(0.9)) + 
@@ -148,23 +112,23 @@ aa_comp %>%
 ```
 
 ```{r}
-colors_border <- c(rgb(0.18, 0.37, 0.68, 0.8), rgb(0.7, 0.66, 0.28, 0.8), rgb(0.27, 0.66, 0.34, 0.8), rgb(0.52, 0.27, 0.66, 0.8), rgb(0.66, 0.27, 0.27, 0.8))
-colors_fill <- c(rgb(0.18, 0.37, 0.68, 0.2), rgb(0.7, 0.66, 0.28, 0.2), rgb(0.27, 0.66, 0.34, 0.2), rgb(0.52, 0.27, 0.66, 0.2), rgb(0.66, 0.27, 0.27, 0.2))
-maxmin <- data.frame(A = c(0.12, 0), C = c(0.12, 0), D = c(0.12, 0), E = c(0.12, 0),
-                     F = c(0.12, 0), G = c(0.12, 0), H = c(0.12, 0), I = c(0.12, 0),
-                     K = c(0.12, 0), L = c(0.12, 0), M = c(0.12, 0), N = c(0.12, 0),
-                     P = c(0.12, 0), Q = c(0.12, 0), R = c(0.12, 0), S = c(0.12, 0), 
-                     T = c(0.12, 0), V = c(0.12, 0), W = c(0.12, 0), Y = c(0.12, 0))
-lapply(unique(aa_comp[["method"]]), function(ith_method) {
-  dat <- filter(aa_comp, method == ith_method) %>%
-    pivot_wider(names_from = aa, values_from = Freq) %>%
-    data.frame()
-  plot_dat <- bind_rows(maxmin, select(dat, -c(method, rep)))
-  plot_dat[is.na(plot_dat)] <- 0
-  rownames(plot_dat) <- c("min", "max", dat[["rep"]])
-  radarchart(plot_dat, axistype = 1,  pcol = colors_border, pfcol = colors_fill, seg = 3, cglcol = "grey30",
-             axislabcol = "black",  plty = 1, caxislabels = c(0, 0.4, 0.8, 0.12), title = ith_method)
-})
+# colors_border <- c(rgb(0.18, 0.37, 0.68, 0.8), rgb(0.7, 0.66, 0.28, 0.8), rgb(0.27, 0.66, 0.34, 0.8), rgb(0.52, 0.27, 0.66, 0.8), rgb(0.66, 0.27, 0.27, 0.8))
+# colors_fill <- c(rgb(0.18, 0.37, 0.68, 0.2), rgb(0.7, 0.66, 0.28, 0.2), rgb(0.27, 0.66, 0.34, 0.2), rgb(0.52, 0.27, 0.66, 0.2), rgb(0.66, 0.27, 0.27, 0.2))
+# maxmin <- data.frame(A = c(0.12, 0), C = c(0.12, 0), D = c(0.12, 0), E = c(0.12, 0),
+#                      F = c(0.12, 0), G = c(0.12, 0), H = c(0.12, 0), I = c(0.12, 0),
+#                      K = c(0.12, 0), L = c(0.12, 0), M = c(0.12, 0), N = c(0.12, 0),
+#                      P = c(0.12, 0), Q = c(0.12, 0), R = c(0.12, 0), S = c(0.12, 0), 
+#                      T = c(0.12, 0), V = c(0.12, 0), W = c(0.12, 0), Y = c(0.12, 0))
+# lapply(unique(aa_comp[["method"]]), function(ith_method) {
+#   dat <- filter(aa_comp, method == ith_method) %>%
+#     pivot_wider(names_from = aa, values_from = Freq) %>%
+#     data.frame()
+#   plot_dat <- bind_rows(maxmin, select(dat, -c(method, rep)))
+#   plot_dat[is.na(plot_dat)] <- 0
+#   rownames(plot_dat) <- c("min", "max", dat[["rep"]])
+#   radarchart(plot_dat, axistype = 1,  pcol = colors_border, pfcol = colors_fill, seg = 3, cglcol = "grey30",
+#              axislabcol = "black",  plty = 1, caxislabels = c(0, 0.4, 0.8, 0.12), title = ith_method)
+# })
 ```
 
 ```{r fig.height = 10}
@@ -228,27 +192,50 @@ pca_res <- prcomp(pca_data[, 3:ncol(pca_data)], center = TRUE, scale = TRUE)
 ggbiplot(pca_res, choices = 1:2, groups = pca_data[["method"]]) +
   ggtitle("PCA on amino acid composition") +
   theme_bw() +
-  theme(plot.title = element_text(hjust = 0.5)) #+
-  #scale_color_brewer(palette = "Paired")
+  geom_point(aes(color = pca_data[["method"]]), size = 3) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_color_manual("Sampling method", values = dataset_colors)
+```
+
+## PCA on bigram and trigram counts
+
+```{r  fig.height = 10}
+ngram_counts_sum <- lapply(methods, function(i) {
+  lapply(1:5, function(j) {
+    ds <- read_fasta(paste0(data_path, "Training_method_", i, "_rep", j, ".fasta"))
+    seqs <- ds[which(grepl("AMP=0", names(ds)))]
+    
+    count_multimers(seqs,
+                    k_vector = c(2, 2, rep(3, 4)),
+                    kmer_gaps_list = list(NULL, 1, c(0, 0), c(1, 0), c(0, 1), c(1, 1)),
+                    alphabet = toupper(colnames(biogram::aaprop))) %>%
+      as.matrix() %>% 
+      colSums() %>% 
+      t() %>% 
+      as.data.frame() %>% 
+      mutate(method = i,
+             rep = j)
+  }) %>% bind_rows()
+}) %>% bind_rows()
+
+ngram_counts_sum[is.na(ngram_counts_sum)] <- 0
+
+pca_ngram_res <- prcomp(select(ngram_counts_sum, -c("method", "rep")), center = TRUE, scale = TRUE)
+
+ggbiplot(pca_ngram_res, choices = 1:2, groups = ngram_counts_sum[["method"]], var.axes = FALSE) +
+  ggtitle("PCA on bigram and trigram counts") +
+  geom_point(aes(color = ngram_counts_sum[["method"]]), size = 3) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_color_manual("Sampling method", values = dataset_colors) 
+
 ```
 
 ## Statistical significance of differences between replicates of each sampling method
 
-```{r}
-aa_comp_peptides <- lapply(methods, function(i) {
-  lapply(1:5, function(j) {
-    ds <- read_fasta(paste0(data_path, "Training_method_", i, "_rep", j, ".fasta"))
-    neg <- ds[which(grepl("AMP=0", names(ds)))]
-    lapply(names(neg), function(ith_prot) {
-      data.frame(table(factor(neg[[ith_prot]], levels = c("A", "C", "D", "E", "F", "G", "H",
-                                                          "I", "K", "L", "M", "N", "P", "Q",
-                                                          "R", "S", "T", "V", "W", "Y")))/length(neg[[ith_prot]])) %>%
-        setNames(c("Amino acid", "Frequency"))  %>%
-        mutate(method = i,
-               rep = j)
-    }) %>% bind_rows()
-  }) %>% bind_rows()
-}) %>% bind_rows()
+```{r fig.height = 10}
+# Amino acid composition - replicates
+aa_comp_peptides <- calculate_aa_comp_peptides(methods, 5, data_path)
 
 combns <- combn(unique(aa_comp_peptides[["rep"]]), 2, simplify = FALSE)
 test_res <- lapply(unique(aa_comp_peptides[["method"]]), function(ith_method) {
@@ -261,54 +248,53 @@ test_res <- lapply(unique(aa_comp_peptides[["method"]]), function(ith_method) {
                  pval = wilcox.test(x = filter(test_dat, `Amino acid` == ith_aa, rep == combns[[ith_combn]][1])[["Frequency"]],
                                     y = filter(test_dat, `Amino acid` == ith_aa, rep == combns[[ith_combn]][2])[["Frequency"]],
                                     exact = FALSE)[["p.value"]])
-    }) %>% bind_rows() %>%
-    mutate(pval_adjusted = p.adjust(pval))
+    }) %>% bind_rows() 
   }) %>% bind_rows()
-}) %>% bind_rows()
+}) %>% bind_rows() %>%
+    mutate(pval_adjusted = p.adjust(pval))
 
 test_res %>%
   select(-pval) %>%
   group_by(aa, method) %>%
   summarise(n_signif = sum(pval_adjusted < 0.05)) %>%
   ggplot(aes(x = aa, y = method, fill = n_signif)) +
-  geom_tile()
-```
+  geom_tile() +
+  ggtitle("Differences in amino acid composition of peptides between replicates")
 
-## Bigram composition
 
-```{r  fig.height = 10}
-bigrams <- lapply(methods, function(i) {
-  lapply(1:5, function(j) {
-    ds <- read_fasta(paste0(data_path, "Training_method_", i, "_rep", j, ".fasta"))
-    seqs <- ds[which(grepl("AMP=0", names(ds)))]
+# Amino acid composition - methods
+combns <- combn(unique(aa_comp_peptides[["method"]]), 2, simplify = FALSE)
+test_res_methods <- lapply(seq_along(combns), function(ith_combn) {
+  test_dat <- filter(aa_comp_peptides, method  %in% combns[[ith_combn]])
+  lapply(unique(aa_comp_peptides[["Amino acid"]]), function(ith_aa) {
+    data.frame(comparison = paste0(combns[[ith_combn]][1], "_", combns[[ith_combn]][2]),
+               aa = ith_aa,
+               pval = wilcox.test(x = filter(test_dat, `Amino acid` == ith_aa, method == combns[[ith_combn]][1])[["Frequency"]],
+                                  y = filter(test_dat, `Amino acid` == ith_aa, method == combns[[ith_combn]][2])[["Frequency"]],
+                                  exact = FALSE)[["p.value"]])
+  }) %>% bind_rows() 
+}) %>% bind_rows() %>%
+    mutate(pval_adjusted = p.adjust(pval)) %>%
+  select(-pval) %>%
+  group_by(aa, comparison) %>%
+  summarise(is_signif = pval_adjusted < 0.05) 
 
-    ngrams <- lapply(seq_along(seqs), function(k) {
-      count_multimers(seqs[[k]],
-                      k_vector = c(2,2),
-                      kmer_gaps_list = list(NULL, 1),
-                      alphabet = toupper(colnames(biogram::aaprop)))  %>%
-        as.matrix() %>%
-        as.data.frame()
-    }) %>% bind_rows()
+test_res_methods_heatmap_dat <- test_res_methods %>% 
+  pivot_wider(names_from = "aa", values_from = "is_signif")
 
-    ngrams[is.na(ngrams)] <- 0
+clustering_methods <- as.dendrogram(hclust(dist(as.matrix(test_res_methods_heatmap_dat[,2:ncol(test_res_methods_heatmap_dat)]))))
+methods_order <- order.dendrogram(clustering_methods)
 
-    s <- colSums(ngrams)
-    data.frame(t(s/sum(s))) %>%
-      mutate(method = i,
-             rep = j)
+aa_comp_methods_clustered_dat <- pivot_longer(test_res_methods_heatmap_dat, 2:21, names_to = "Amino acid", values_to = "is_signif")
+aa_comp_methods_clustered_dat[["comparison"]] <- factor(aa_comp_methods_clustered_dat[["comparison"]],
+                                             levels = test_res_methods_heatmap_dat[["comparison"]][methods_order], ordered = TRUE)
 
-  }) %>% bind_rows()
-}) %>% bind_rows 
-
-bigrams[is.na(bigrams)] <- 0
-
-pca_bigram_res <- prcomp(bigrams[, 1:(ncol(bigrams)-2)], center = TRUE, scale = TRUE)
-
-ggbiplot(pca_bigram_res, choices = 1:2, groups = bigrams[["method"]], var.axes = FALSE) +
-  ggtitle("PCA on bigram composition") +
+aa_comp_methods_clustered_dat %>% 
+  ggplot(aes(x = `Amino acid`, y = comparison, fill = is_signif)) +
+  geom_tile() +
   theme_bw() +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(legend.position = "bottom",
+        legend.key.width = unit(2, "lines"))
 
 ```
 
@@ -326,7 +312,7 @@ lapply(props[["prop"]], function(ith_prop) {
   plot_dat <- df[, c("prot", "method", "rep", ith_prop)] %>% 
     setNames(c("prot", "Method", "Repetition", "Property"))
   ggplot(plot_dat, aes(x = Repetition, y = Property, group = Repetition)) +
-    geom_violin(fill = "lightblue") +
+    geom_violin(fill = "#76bef2") +
     facet_wrap(~Method, scales = "free", ncol = 3) +
     ggtitle(props[["description"]][which(props[["prop"]] == ith_prop)]) + 
     xlab(NULL) +
@@ -352,7 +338,8 @@ pca_prop_res <- prcomp(props[, 1:(ncol(props)-2)], center = TRUE, scale = TRUE)
 ggbiplot(pca_prop_res, choices = 1:2, groups = props[["method"]]) +
   ggtitle("PCA on means of physicochemical properties") +
   theme_bw() +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_color_manual("Sampling method", values = dataset_colors)
 ```
 
 
