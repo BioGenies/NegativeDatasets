@@ -249,9 +249,9 @@ test_res <- lapply(unique(aa_comp_peptides[["method"]]), function(ith_method) {
                                     y = filter(test_dat, `Amino acid` == ith_aa, rep == combns[[ith_combn]][2])[["Frequency"]],
                                     exact = FALSE)[["p.value"]])
     }) %>% bind_rows() 
-  }) %>% bind_rows()
-}) %>% bind_rows() %>%
+  }) %>% bind_rows() %>%
     mutate(pval_adjusted = p.adjust(pval))
+}) %>% bind_rows()
 
 test_res %>%
   select(-pval) %>%
@@ -337,6 +337,7 @@ pca_prop_res <- prcomp(props[, 1:(ncol(props)-2)], center = TRUE, scale = TRUE)
 
 ggbiplot(pca_prop_res, choices = 1:2, groups = props[["method"]]) +
   ggtitle("PCA on means of physicochemical properties") +
+  geom_point(aes(color = props[["method"]]), size = 3) +
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5)) +
   scale_color_manual("Sampling method", values = dataset_colors)
