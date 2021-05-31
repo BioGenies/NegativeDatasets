@@ -4,32 +4,36 @@ encode_seq <- function(x, property) {
   })
 }
 
-calculate_properties <- function(methods, n_rep, data_path) {
+get_prop_df <- function(methods, n_rep, data_path) {
   lapply(methods, function(ith_method) {
     lapply(1:n_rep, function(j) {
       ds <- read_fasta(paste0(data_path, "Training_method_", ith_method, "_rep", j, ".fasta"))
       ds_neg <- ds[which(grepl("AMP=0", names(ds)))]
-      data.frame(prot = names(ds_neg),
-                 method = ith_method,
-                 rep = j,
-                 len = lengths(ds_neg),
-                 BIGC670101 = encode_seq(ds_neg, "BIGC670101"),
-                 ARGP820101 = encode_seq(ds_neg, "ARGP820101"),
-                 CHAM820101 = encode_seq(ds_neg, "CHAM820101"),
-                 CHOP780201 = encode_seq(ds_neg, "CHOP780201"),
-                 CHOP780202 = encode_seq(ds_neg, "CHOP780202"),
-                 CHOP780203 = encode_seq(ds_neg, "CHOP780203"),
-                 FASG760101 = encode_seq(ds_neg, "FASG760101"),
-                 FASG760104 = encode_seq(ds_neg, "FASG760104"),
-                 FASG760105 = encode_seq(ds_neg, "FASG760105"),
-                 FAUJ880103 = encode_seq(ds_neg, "FAUJ880103"),
-                 KLEP840101 = encode_seq(ds_neg, "KLEP840101"),
-                 KYTJ820101 = encode_seq(ds_neg, "KYTJ820101"),
-                 ZIMJ680103 = encode_seq(ds_neg, "ZIMJ680103"),
-                 ENGD860101 = encode_seq(ds_neg, "ENGD860101"),
-                 FASG890101 = encode_seq(ds_neg, "FASG890101"))
+      calculate_properties(ds_neg, ith_method, j)
     }) %>% bind_rows()
   }) %>% bind_rows()
+}
+
+calculate_properties <- function(ds_neg, method, rep) {
+  data.frame(prot = names(ds_neg),
+             method = method,
+             rep = rep,
+             len = lengths(ds_neg),
+             BIGC670101 = encode_seq(ds_neg, "BIGC670101"),
+             ARGP820101 = encode_seq(ds_neg, "ARGP820101"),
+             CHAM820101 = encode_seq(ds_neg, "CHAM820101"),
+             CHOP780201 = encode_seq(ds_neg, "CHOP780201"),
+             CHOP780202 = encode_seq(ds_neg, "CHOP780202"),
+             CHOP780203 = encode_seq(ds_neg, "CHOP780203"),
+             FASG760101 = encode_seq(ds_neg, "FASG760101"),
+             FASG760104 = encode_seq(ds_neg, "FASG760104"),
+             FASG760105 = encode_seq(ds_neg, "FASG760105"),
+             FAUJ880103 = encode_seq(ds_neg, "FAUJ880103"),
+             KLEP840101 = encode_seq(ds_neg, "KLEP840101"),
+             KYTJ820101 = encode_seq(ds_neg, "KYTJ820101"),
+             ZIMJ680103 = encode_seq(ds_neg, "ZIMJ680103"),
+             ENGD860101 = encode_seq(ds_neg, "ENGD860101"),
+             FASG890101 = encode_seq(ds_neg, "FASG890101"))
 }
 
 
