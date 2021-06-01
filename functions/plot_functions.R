@@ -61,8 +61,7 @@ calculate_aa_comp_peptides <- function(methods, n_rep, data_path) {
                                                             "R", "S", "T", "V", "W", "Y")))/length(neg[[ith_prot]])) %>%
           setNames(c("Amino acid", "Frequency"))  %>%
           mutate(method = i,
-                 rep = j,
-                 prot = names(neg))
+                 rep = j)
       }) %>% bind_rows()
     }) %>% bind_rows()
   }) %>% bind_rows()
@@ -107,14 +106,14 @@ get_ngram_counts_sum <- function(methods, n_rep, data_path) {
   }) %>% bind_rows()
 }
 
-get_ngram_counts_pos <- function(positive) {
-  count_multimers(positive,
+get_ngram_counts_sum_pos <- function(positive) {
+  ngram_counts_sum_pos <- count_multimers(positive,
                   k_vector = c(rep(2, 4), rep(3, 4)),
                   kmer_gaps_list = list(NULL, 1, 2, 3, c(0, 0), c(1, 0), c(0, 1), c(1, 1)),
                   alphabet = toupper(colnames(biogram::aaprop))) %>%
     as.matrix() %>% 
     colSums()/length(positive) 
-  ngram_counts_sum_pos <- ngram_counts_sum_pos %>% 
+  ngram_counts_sum_pos %>% 
     t() %>% 
     as.data.frame() %>% 
     mutate(method = "Positive",

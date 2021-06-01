@@ -74,16 +74,12 @@ list(
       dbAMP = "#f276e8", GabereNoble = "#7688f2", iAMP2L = "#eff275", Wang = "#80f276", Witten = "#ccf276")
   ),
   tar_target(
-    aa_comp_peptides_with_names,
+    aa_comp_peptides,
     calculate_aa_comp_peptides(methods, 5, paste0(data_path, "Datasets/"))
   ),
   tar_target(
-    aa_comp_peptides,
-    select(aa_comp_peptides_with_names, -prot)
-  ),
-  tar_target(
-    aa_comp_peptides_positive,
-    get_aa_comp_positive(positive_traintest)
+    aa_comp_peptides_pos,
+    get_aa_comp_peptides_positive(positive_traintest)
   ),
   tar_target(
     aa_comp_peptides_all,

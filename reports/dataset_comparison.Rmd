@@ -43,8 +43,11 @@ if(Sys.info()[["nodename"]] == "kasia-MACH-WX9") {
   data_path <- "/media/kasia/Data/Dropbox/Projekty/BioNgramProjects/NegativeDatasets/Datasets/"
 }
 
-tar_load(c(positive_traintest, methods, dataset_colors, aa_comp_peptides_with_names, aa_comp_peptides, aa_comp_peptides_positive,
-           aa_comp_peptides_all, aa_comp, aa_comp_pos, aa_comp_all, df_neg, df_pos, df_all))
+withr::with_dir(rprojroot::find_root('_targets.R'), 
+                tar_load(c(positive_traintest, methods, dataset_colors, aa_comp_peptides_with_names, 
+                           aa_comp_peptides, aa_comp_peptides_pos, aa_comp_peptides_all, aa_comp, 
+                           aa_comp_pos, aa_comp_all, df_neg, df_pos, df_all, ngram_counts_sum,
+                           ngram_counts_sum_pos, ngram_counts_sum_all)))
 ```
 
 ## Datasets
@@ -318,7 +321,7 @@ ggplot(test_res_methods, aes(x = method1, y = method2, fill = is_signif)) +
   ggtitle("Differences in amino acid composition of peptides between methods and positive dataset")
 ```
 
-```{r}
+```{r fig.height = 10}
 aa_comp_peptides_all %>% 
   group_by(method, `Amino acid`) %>% 
   dplyr::summarise(Mean_frequency = mean(Frequency), sd = sd(Frequency)) %>% 
@@ -337,9 +340,12 @@ aa_comp_peptides_all %>%
 
 
 
-aa_comp_peptides_heatmap_dat <- bind_rows(aa_comp_peptides_with_names, aa_comp_peptides_pos) %>% 
-  pivot_wider(names_from = "Amino acid", values_from = "Frequency", values_fill = 0) %>% 
+aa_comp_peptides_heatmap_dat <- aa_comp_peptides_all %>% 
+  group_by(method, rep, `Amino acid`) %>% 
+  dplyr::summarise(mean_frequency = mean(Frequency)) %>% 
+  pivot_wider(names_from = "Amino acid", values_from = "mean_frequency", values_fill = 0) %>% 
   mutate(Dataset = ifelse(method == "Positive", "Positive", paste0(method, "_rep", rep))) %>% 
+  ungroup() %>% 
   select(-c(method, rep)) 
 
 clustering_methods <- as.dendrogram(hclust(dist(as.matrix(aa_comp_peptides_heatmap_dat[, c("A", "C", "D", "E", "F", "G", "H", 
