@@ -75,7 +75,7 @@ list(
   ),
   tar_target(
     aa_comp_peptides_with_names,
-    calculate_aa_comp_peptides(methods, 5, data_path)
+    calculate_aa_comp_peptides(methods, 5, paste0(data_path, "Datasets/"))
   ),
   tar_target(
     aa_comp_peptides,
@@ -93,7 +93,7 @@ list(
   ),
   tar_target(
     aa_comp,
-    calculate_aa_comp_datasets(methods, 5, data_path)
+    calculate_aa_comp_datasets(methods, 5, paste0(data_path, "Datasets/"))
   ),
   tar_target(
     aa_comp_pos,
@@ -109,7 +109,7 @@ list(
   ),
   tar_target(
     df_neg,
-    get_prop_df(methods, 5, data_path)
+    get_prop_df(methods, 5, paste0(data_path, "Datasets/"))
   ),
   tar_target(
     df_pos,
@@ -124,7 +124,7 @@ list(
   ),
   tar_target(
     ngram_counts_sum,
-    get_ngram_counts_sum(methods, 5, data_path)
+    get_ngram_counts_sum(methods, 5, paste0(data_path, "Datasets/"))
   ),
   tar_target(
     ngram_counts_sum_pos,
