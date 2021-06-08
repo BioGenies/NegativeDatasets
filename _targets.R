@@ -8,6 +8,7 @@ library(ggdendro)
 library(grid)
 library(gridExtra)
 library(ggbiplot)
+library(cowplot)
 
 
 if(Sys.info()[["nodename"]] == "kasia-MACH-WX9") {
