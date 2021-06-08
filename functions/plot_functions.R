@@ -119,3 +119,193 @@ get_ngram_counts_sum_pos <- function(positive) {
     mutate(method = "Positive",
            rep = 1)
 }
+
+
+get_aa_comp_heatmap <- function(aa_comp_all) {
+  aa_comp_heatmap_dat <- aa_comp_all %>% 
+    pivot_wider(names_from = "aa", values_from = "Freq", values_fill = 0) %>% 
+    mutate(Dataset = ifelse(Dataset == "Positive", "Positive", paste0(method, "_rep", rep))) %>% 
+    select(-c(method, rep)) 
+
+  clustering_methods <- as.dendrogram(hclust(dist(as.matrix(aa_comp_heatmap_dat[,2:21]))))
+  methods_order <- order.dendrogram(clustering_methods)
+  
+  dendro <- clustering_methods %>%
+    dendro_data %>%
+    segment %>%
+    ggplot(aes(x = x, y = y, xend = xend, yend = yend)) +
+    geom_segment() +
+    scale_y_continuous("") +
+    scale_x_discrete("",
+                     limits = factor(1L:nobs(clustering_methods))) + 
+    theme_void() + 
+    coord_flip()
+  
+  aa_comp_clustered_dat <- pivot_longer(aa_comp_heatmap_dat, 2:21, names_to = "Amino acid", values_to = "Frequency")
+  aa_comp_clustered_dat[["Dataset"]] <- factor(aa_comp_clustered_dat[["Dataset"]],
+                                               levels = aa_comp_heatmap_dat[["Dataset"]][methods_order], ordered = TRUE)
+  
+  heatmap <- aa_comp_clustered_dat %>% 
+    ggplot(aes(x = `Amino acid`, y = Dataset)) +
+    geom_tile(aes(fill = Frequency)) +
+    scale_fill_gradient2(low = "#ffffff", mid = "#ffe96b",  high = "#ff4242", midpoint = 0.05) +
+    theme_bw() +
+    theme(legend.position = "bottom",
+          legend.key.width = unit(2, "lines"))
+  
+  max_height <- unit.pmax(ggplotGrob(heatmap)[["heights"]],
+                          ggplotGrob(dendro)[["heights"]])
+  
+  grob_list <- list(heatmap = ggplotGrob(heatmap),
+                    dendrogram = ggplotGrob(dendro))
+  grob_list[["heatmap"]][["heights"]] <-
+    grob_list[["dendrogram"]][["heights"]] <-
+    max_height
+  
+  grid.arrange(grob_list[["heatmap"]], grob_list[["dendrogram"]], widths = c(0.8, 0.2))
+}
+
+
+get_pca_aa_comp_plot <- function(aa_comp_all, dataset_colors) {
+  
+  pca_data_all <- aa_comp_all %>% 
+    pivot_wider(names_from = aa, values_from = Freq, values_fill = 0) %>% 
+    mutate(method = factor(method, levels = names(dataset_colors)))
+  
+  pca_res_all <- prcomp(pca_data_all[, 4:ncol(pca_data_all)], center = TRUE, scale = TRUE)
+  
+  ggbiplot(pca_res_all, choices = 1:2) +
+    theme_bw() +
+    geom_point(aes(color = pca_data_all[["method"]], shape = pca_data_all[["method"]]), size = 3) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
+    scale_shape_manual("Dataset", values = c(17, rep(16, 13)), labels = names(dataset_colors))
+}
+
+
+get_pca_prop_plot <- function(df_all, methods, dataset_colors) {
+  props <- lapply(methods, function(i) {
+    lapply(1:5, function(j) {
+      data.frame(t(colMeans(filter(df_all, method == i, rep == j)[, 5:(ncol(df_all)-1)]))) %>% 
+        mutate(method = factor(i),
+               repetition = factor(j),
+               dataset = "Negative")
+    }) %>% bind_rows()
+  }) %>% bind_rows()
+  props_pos <- data.frame(t(colMeans(filter(df_all, method == "Positive")[, 5:(ncol(df_all)-1)]))) %>% 
+    mutate(method = "Positive", 
+           repetition = "1",
+           dataset = "Positive")
+  props_all <- bind_rows(props, props_pos) %>% 
+    mutate(method = factor(method, levels = names(dataset_colors)))
+  
+  pca_prop_res_all <- prcomp(props_all[, 1:(ncol(props_all)-3)], center = TRUE, scale = TRUE)
+  
+  ggbiplot(pca_prop_res_all, choices = 1:2) +
+    #ggtitle("PCA on means of physicochemical properties with positive dataset") +
+    geom_point(aes(color = props_all[["method"]], shape = props_all[["method"]]), size = 3) +
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
+    scale_shape_manual("Dataset", values = c(17, rep(16, 13)), labels = names(dataset_colors)) +
+    xlim(c(-2.5, 6))
+}
+
+
+get_aa_comp_barplot <- function(aa_comp_all, dataset_colors) {
+  aa_comp_all %>% 
+    group_by(Dataset, aa, method) %>% 
+    dplyr::summarise(Frequency = mean(Freq), sd = sd(Freq)) %>% 
+    mutate(method = factor(method, levels = names(dataset_colors))) %>% 
+    ggplot(aes(x = method, y = Frequency, fill = Dataset)) +
+    geom_col(color = "black", size = 0.25) +
+    facet_wrap(~aa, nrow = 4) +
+    scale_fill_manual("Dataset", values = c(Negative = "#76bef2", Positive = "#ff4242")) +
+    geom_errorbar(aes(ymin = Frequency - sd, ymax = Frequency + sd), width = 0.2,
+                  position = position_dodge(0.9)) + 
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90)) +
+    #ggtitle("Differences in amino acid frequency using different sampling methods") +
+    theme(legend.position = "none")
+}
+
+get_pca_res_ngrams <- function(ngram_counts_sum_all) {
+  ngram_counts_sum_all[is.na(ngram_counts_sum_all)] <- 0
+  pca_ngram_res <- prcomp(select(ngram_counts_sum_all, -c("method", "rep", "Dataset")), center = TRUE, scale = TRUE)
+}
+
+plot_pca_res_ngrams <- function(pca_ngram_res, ngram_counts_sum_all, dataset_colors) {
+  ggbiplot(pca_ngram_res, choices = 1:2, var.axes = FALSE) +
+    geom_point(aes(color = ngram_counts_sum_all[["method"]], shape = ngram_counts_sum_all[["method"]]), size = 3) +
+    theme_bw() +
+    scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
+    scale_shape_manual("Dataset", values = c(17, rep(16, 13)), labels = names(dataset_colors)) 
+}
+
+plot_pca_res_ngrams_zoom <- function(pca_ngram_res, ngram_counts_sum_all, dataset_colors) {
+  ggbiplot(pca_ngram_res, choices = 1:2, var.axes = FALSE) +
+    geom_point(aes(color = ngram_counts_sum_all[["method"]], shape = ngram_counts_sum_all[["method"]]), size = 3) +
+    theme_bw() +
+    scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
+    scale_shape_manual("Dataset", values = c(17, rep(16, 13)), labels = names(dataset_colors)) +
+    xlim(c(-0.7, -0.25)) +
+    ylim(c(-0.85, -0.35)) + 
+    theme(legend.position = "none", 
+          axis.title.y = element_blank(),
+          axis.title.x = element_blank())
+}
+
+get_sequence_length_plot <- function(df_all) {
+  
+  plist <- lapply(unique(df_all[["method"]]), function(ith_method) {
+    df_all %>% 
+      filter(method == ith_method) %>% 
+      ggplot(aes(x = rep, y = len, group = rep, fill = Dataset)) +
+      geom_violin() +
+      theme_bw() +
+      facet_wrap(~method) +
+      theme(legend.position = "none",
+            axis.title.x = element_blank(),
+            axis.title.y = element_blank()) +
+      scale_fill_manual("Dataset", values = c(Negative = "#76bef2", Positive = "#ff4242")) 
+  }) %>% setNames(unique(df_all[["method"]]))
+  
+  blank <- ggplot() + theme_void()
+  
+  p <- plot_grid(plotlist = list(plist[["Positive"]], plist[["AMAP"]], plist[["GabereNoble"]], plist[["CSAMPPred"]], plist[["AmPEP"]],
+                 blank, plist[["AmpGram"]], plist[["Wang"]], plist[["dbAMP"]], plist[["ampir-mature"]],
+                 blank, plist[["AMPlify"]], blank, plist[["iAMP2L"]], plist[["ampir-precursor"]],
+                 blank, plist[["AMPScannerV2"]], blank, blank, blank, blank, plist[["Witten"]]),
+            nrow = 5, ncol = 5, rel_widths = c(1, 2.5, 2.5, 2.5, 2.5)) 
+  
+  grid.arrange(arrangeGrob(p, left = textGrob("Length", rot = 90), bottom = textGrob("Replication")))
+
+}
+
+get_statistical_analysis_plot_aa_comp_replicates <- function(aa_comp_peptides) {
+  combns <- combn(unique(aa_comp_peptides[["rep"]]), 2, simplify = FALSE)
+  test_res <- lapply(unique(aa_comp_peptides[["method"]]), function(ith_method) {
+    lapply(seq_along(combns), function(ith_combn) {
+      test_dat <- filter(aa_comp_peptides, method == ith_method, rep %in% combns[[ith_combn]])
+      lapply(unique(aa_comp_peptides[["Amino acid"]]), function(ith_aa) {
+        data.frame(method = ith_method,
+                   comparison = paste0(combns[[ith_combn]][1], "_", combns[[ith_combn]][2]),
+                   aa = ith_aa,
+                   pval = wilcox.test(x = filter(test_dat, `Amino acid` == ith_aa, rep == combns[[ith_combn]][1])[["Frequency"]],
+                                      y = filter(test_dat, `Amino acid` == ith_aa, rep == combns[[ith_combn]][2])[["Frequency"]],
+                                      exact = FALSE)[["p.value"]])
+      }) %>% bind_rows() 
+    }) %>% bind_rows() %>%
+      mutate(pval_adjusted = p.adjust(pval))
+  }) %>% bind_rows()
+  
+  test_res %>%
+    select(-pval) %>%
+    group_by(aa, method) %>%
+    dplyr::summarise(n_signif = as.factor(sum(pval_adjusted < 0.05))) %>%
+    ggplot(aes(x = aa, y = method, fill = n_signif)) +
+    geom_tile(color = "white") +
+    scale_fill_manual("n of significant comparisons", values = "#76bef2", na.value = "grey90") +
+    theme_bw() +
+    theme(legend.position = "bottom")
+}

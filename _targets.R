@@ -2,6 +2,13 @@ library(dplyr)
 library(biogram)
 library(pbapply)
 library(targets)
+library(ggplot2)
+library(tidyr)
+library(ggdendro)
+library(grid)
+library(gridExtra)
+library(ggbiplot)
+
 
 if(Sys.info()[["nodename"]] == "kasia-MACH-WX9") {
   data_path <- "/media/kasia/Data/Dropbox/Projekty/BioNgramProjects/NegativeDatasets/"
@@ -131,6 +138,66 @@ list(
     bind_rows(mutate(ngram_counts_sum, Dataset = "Negative"),
               mutate(ngram_counts_sum_pos, Dataset = "Positive")) %>% 
       mutate(method = factor(method, levels = names(dataset_colors))) 
+  ),
+  tar_target(
+    aa_comp_heatmap,
+    ggsave(filename = "aa_comp_heatmap.eps",
+           plot = get_aa_comp_heatmap(aa_comp_all),
+           path = paste0(data_path, "Publication_results/"),
+           width = 10, height = 10)
+  ),
+  tar_target(
+    pca_aa_comp,
+    ggsave(filename = "pca_aa_comp.eps",
+           get_pca_aa_comp_plot(aa_comp_all, dataset_colors),
+           path = paste0(data_path, "Publication_results/"),
+           width = 10, height = 10)
+  ),
+  tar_target(
+    pca_prop,
+    ggsave(filename = "pca_prop.eps",
+           get_pca_prop_plot(df_all, methods, dataset_colors),
+           path = paste0(data_path, "Publication_results/"),
+           width = 10, height = 10)
+  ),
+  tar_target(
+    ngram_pca,
+      get_pca_res_ngrams(ngram_counts_sum_all)
+  ),
+  tar_target(
+    ngram_pca_plot,
+    ggsave(filename = "pca_ngrams.eps",
+           plot_pca_res_ngrams(ngram_pca, ngram_counts_sum_all, dataset_colors),           
+           path = paste0(data_path, "Publication_results/"),
+           width = 10, height = 10)
+  ),
+  tar_target(
+    ngram_pca_plot_zoom,
+    ggsave(filename = "pca_ngrams_zoom.eps",
+           plot_pca_res_ngrams_zoom(ngram_pca, ngram_counts_sum_all, dataset_colors),
+           path = paste0(data_path, "Publication_results/"),
+           width = 10, height = 10)
+  ),
+  tar_target(
+    sequence_length_plot,
+    ggsave(filename = "sequence_length.eps",
+           get_sequence_length_plot(df_all),
+           path = paste0(data_path, "Publication_results/"),
+           width = 12, height = 8)
+  ),
+  tar_target(
+    aa_comp_peptides_test_plot,
+    ggsave(filename = "aa_comp_test_replicates.eps",
+           get_statistical_analysis_plot_aa_comp_replicates(aa_comp_peptides),
+           path = paste0(data_path, "Publication_results/"),
+           width = 6, height = 4)
+  ),
+  tar_target(
+    aa_comp_barplot,
+    ggsave(filename = "aa_comp_barplot.eps",
+           get_aa_comp_barplot(aa_comp_all, dataset_colors),
+           path = paste0(data_path, "Publication_results/"),
+           width = 10, height = 8)
   )
 )
 
