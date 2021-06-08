@@ -148,7 +148,7 @@ get_aa_comp_heatmap <- function(aa_comp_all) {
   heatmap <- aa_comp_clustered_dat %>% 
     ggplot(aes(x = `Amino acid`, y = Dataset)) +
     geom_tile(aes(fill = Frequency)) +
-    scale_fill_gradient2(low = "#ffffff", mid = "#ffe96b",  high = "#ff4242", midpoint = 0.05) +
+    scale_fill_gradientn(colors = c("#ffffff", "#ffe96b", "#ff4242", "#630000"), values = rescale(c(0, 0.03, 0.08, 0.14), to = c(0, 1))) +
     theme_bw() +
     theme(legend.position = "bottom",
           legend.key.width = unit(2, "lines"))
@@ -308,4 +308,15 @@ get_statistical_analysis_plot_aa_comp_replicates <- function(aa_comp_peptides) {
     scale_fill_manual("n of significant comparisons", values = "#76bef2", na.value = "grey90") +
     theme_bw() +
     theme(legend.position = "bottom")
+}
+
+
+get_sequence_length_table <- function(df_all, data_path) {
+  df_all %>% 
+    group_by(method, rep) %>% 
+    dplyr::summarise(n = n()) %>% 
+    pivot_wider(names_from = "rep", values_from = "n") %>% 
+    xtable %>% 
+    print(file = paste0(data_path, "Publication_results/sequence_length_table.txt"),
+          include.rownames = FALSE)
 }

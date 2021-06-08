@@ -9,6 +9,7 @@ library(grid)
 library(gridExtra)
 library(ggbiplot)
 library(cowplot)
+library(xtable)
 
 
 if(Sys.info()[["nodename"]] == "kasia-MACH-WX9") {
@@ -167,15 +168,17 @@ list(
   ),
   tar_target(
     ngram_pca_plot,
-    ggsave(filename = "pca_ngrams.eps",
-           plot_pca_res_ngrams(ngram_pca, ngram_counts_sum_all, dataset_colors),           
-           path = paste0(data_path, "Publication_results/"),
-           width = 10, height = 10)
+    plot_pca_res_ngrams(ngram_pca, ngram_counts_sum_all, dataset_colors)
   ),
   tar_target(
     ngram_pca_plot_zoom,
-    ggsave(filename = "pca_ngrams_zoom.eps",
-           plot_pca_res_ngrams_zoom(ngram_pca, ngram_counts_sum_all, dataset_colors),
+    plot_pca_res_ngrams_zoom(ngram_pca, ngram_counts_sum_all, dataset_colors)
+  ),
+  tar_target(
+    ngram_pca_combined,
+    ggsave(filename = "pca_ngrams.eps",
+           ngram_pca_plot + annotation_custom(ggplotGrob(ngram_pca_plot_zoom), 
+                                              xmin = 1, xmax = 3, ymin = 0, ymax = 1.75),
            path = paste0(data_path, "Publication_results/"),
            width = 10, height = 10)
   ),
@@ -199,6 +202,10 @@ list(
            get_aa_comp_barplot(aa_comp_all, dataset_colors),
            path = paste0(data_path, "Publication_results/"),
            width = 10, height = 8)
+  ),
+  tar_target(
+    sequence_length_table,
+    get_sequence_length_table(df_all, data_path) 
   )
 )
 
