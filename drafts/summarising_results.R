@@ -87,15 +87,16 @@ detailed_stats_mean <- detailed_stats %>%
   summarise(mean_AUC = mean(AUC),
             sd = sd(AUC))
 
+pdf("./drafts/architecture-benchmark.pdf", height = 10, width = 9)
 ggplot(detailed_stats_mean, aes(x = method, y = seq_source, fill = mean_AUC)) +
   geom_tile() +
   geom_point(data = detailed_stats_mean, aes(x = method, y = seq_source, size = sd)) +
   facet_wrap(~architecture, ncol = 3) +
-  scale_fill_gradient("Mean AUC", low = "#ffffff", high = "#ff4242",
+  scale_fill_gradient("Mean AUC", low =  "#ffe96b",  high = "#ff4242",
                        trans = scales::trans_new("square_exp", function(x) exp(x)^2, function(x) log(sqrt(x)))) +
   scale_size_continuous("Standard deviation") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90), legend.position = "bottom") +
   xlab("Sampling method used for generation of training negative dataset") +
   ylab("Sampling method used for generation of test negative dataset")
-
+dev.off()
