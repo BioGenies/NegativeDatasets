@@ -209,7 +209,7 @@ list(
   ),
   tar_target(
     aa_comp_methods_test_plot,
-    ggave(filename = "aa_comp_test_methods.eps",
+    ggsave(filename = "aa_comp_test_methods.eps",
           get_statistical_analysis_plot_aa_comp_methods(aa_comp_peptides_all),
           path = paste0(data_path, "Publication_results/"),
           width = 10, height = 9))
