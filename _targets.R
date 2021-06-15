@@ -164,7 +164,7 @@ list(
   ),
   tar_target(
     ngram_pca,
-      get_pca_res_ngrams(ngram_counts_sum_all)
+    get_pca_res_ngrams(ngram_counts_sum_all)
   ),
   tar_target(
     ngram_pca_plot,
@@ -207,10 +207,11 @@ list(
     sequence_length_table,
     get_sequence_length_table(df_all, data_path) 
   ),
-  aa_comp_methods_test_plot,
-  ggave(filename = "aa_comp_test_methods.eps",
-        get_statistical_analysis_plot_aa_comp_methods(aa_comp_peptides_all),
-        path = paste0(data_path, "Publication_results/"),
-        width = 10, height = 10)
+  tar_target(
+    aa_comp_methods_test_plot,
+    ggave(filename = "aa_comp_test_methods.eps",
+          get_statistical_analysis_plot_aa_comp_methods(aa_comp_peptides_all),
+          path = paste0(data_path, "Publication_results/"),
+          width = 10, height = 9))
 )
 

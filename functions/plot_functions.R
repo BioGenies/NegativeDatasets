@@ -500,7 +500,7 @@ get_statistical_analysis_plot_aa_comp_methods <- function(aa_comp_peptides_all) 
     mutate(pval_adjusted = p.adjust(pval)) %>%
     select(-pval) %>%
     group_by(aa, method1, method2) %>%
-    summarise(is_signif = pval_adjusted < 0.05) 
+    dplyr::summarise(is_signif = pval_adjusted < 0.05) 
   
   ggplot(test_res_methods, aes(x = method1, y = method2, fill = is_signif)) +
     geom_tile(color = "white") +
