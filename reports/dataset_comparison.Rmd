@@ -139,49 +139,8 @@ get_statistical_analysis_plot_aa_comp_replicates(aa_comp_peptides) +
     ggtitle("Differences in amino acid composition of peptides between replicates")
 
 # Amino acid composition - methods
-
   
-combns <- combn(unique(aa_comp_peptides_all[["method"]]), 2, simplify = FALSE)
-test_res_methods <- lapply(seq_along(combns), function(ith_combn) {
-  test_dat <- filter(aa_comp_peptides_all, method  %in% combns[[ith_combn]])
-  lapply(unique(aa_comp_peptides_all[["Amino acid"]]), function(ith_aa) {
-    data.frame(method1 = combns[[ith_combn]][1], 
-               method2 = combns[[ith_combn]][2],
-               aa = ith_aa,
-               pval = wilcox.test(x = filter(test_dat, `Amino acid` == ith_aa, method == combns[[ith_combn]][1])[["Frequency"]],
-                                  y = filter(test_dat, `Amino acid` == ith_aa, method == combns[[ith_combn]][2])[["Frequency"]],
-                                  exact = FALSE)[["p.value"]])
-  }) %>% bind_rows() 
-}) %>% bind_rows() %>%
-    mutate(pval_adjusted = p.adjust(pval)) %>%
-  select(-pval) %>%
-  group_by(aa, method1, method2) %>%
-  summarise(is_signif = pval_adjusted < 0.05) 
-
-# test_res_methods_heatmap_dat <- test_res_methods %>% 
-#   pivot_wider(names_from = "aa", values_from = "is_signif")
-# 
-# clustering_methods <- as.dendrogram(hclust(dist(as.matrix(test_res_methods_heatmap_dat[,2:ncol(test_res_methods_heatmap_dat)]))))
-# methods_order <- order.dendrogram(clustering_methods)
-# 
-# aa_comp_methods_clustered_dat <- pivot_longer(test_res_methods_heatmap_dat, 2:21, names_to = "Amino acid", values_to = "is_signif")
-# aa_comp_methods_clustered_dat[["comparison"]] <- factor(aa_comp_methods_clustered_dat[["comparison"]],
-#                                              levels = test_res_methods_heatmap_dat[["comparison"]][methods_order], ordered = TRUE)
-# 
-# aa_comp_methods_clustered_dat %>% 
-#   ggplot(aes(x = `Amino acid`, y = comparison, fill = is_signif)) +
-#   geom_tile() +
-#   theme_bw() +
-#   theme(legend.position = "bottom",
-#         legend.key.width = unit(2, "lines"))
-
-ggplot(test_res_methods, aes(x = method1, y = method2, fill = is_signif)) +
-  geom_tile(color = "white") +
-  facet_wrap(~aa) +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        axis.text.x = element_text(angle = 90)) +
-  scale_fill_manual("Is significant", values = c(`FALSE` = "#76bef2", `TRUE` = "#ff4242")) +
+get_statistical_analysis_plot_aa_comp_methods(aa_comp_peptides_all) +
   ggtitle("Differences in amino acid composition of peptides between methods and positive dataset")
 ```
 
