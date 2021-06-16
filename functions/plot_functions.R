@@ -36,6 +36,168 @@ calculate_properties <- function(ds_neg, method, rep) {
              FASG890101 = encode_seq(ds_neg, "FASG890101"))
 }
 
+my_ggbiplot <- function(pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE, 
+                        obs.scale = 1 - scale, var.scale = scale, 
+                        groups = NULL, ellipse = FALSE, ellipse.prob = 0.68, 
+                        labels = NULL, labels.size = 3, alpha = 1, 
+                        var.axes = TRUE, 
+                        circle = FALSE, circle.prob = 0.69, 
+                        varname.size = 3, varname.adjust = 1.5, 
+                        varname.abbrev = FALSE, ...) {
+  
+  stopifnot(length(choices) == 2)
+  
+  # Recover the SVD
+  if(inherits(pcobj, 'prcomp')){
+    nobs.factor <- sqrt(nrow(pcobj$x) - 1)
+    d <- pcobj$sdev
+    u <- sweep(pcobj$x, 2, 1 / (d * nobs.factor), FUN = '*')
+    v <- pcobj$rotation
+  } else if(inherits(pcobj, 'princomp')) {
+    nobs.factor <- sqrt(pcobj$n.obs)
+    d <- pcobj$sdev
+    u <- sweep(pcobj$scores, 2, 1 / (d * nobs.factor), FUN = '*')
+    v <- pcobj$loadings
+  } else if(inherits(pcobj, 'PCA')) {
+    nobs.factor <- sqrt(nrow(pcobj$call$X))
+    d <- unlist(sqrt(pcobj$eig)[1])
+    u <- sweep(pcobj$ind$coord, 2, 1 / (d * nobs.factor), FUN = '*')
+    v <- sweep(pcobj$var$coord,2,sqrt(pcobj$eig[1:ncol(pcobj$var$coord),1]),FUN="/")
+  } else if(inherits(pcobj, "lda")) {
+    nobs.factor <- sqrt(pcobj$N)
+    d <- pcobj$svd
+    u <- predict(pcobj)$x/nobs.factor
+    v <- pcobj$scaling
+    d.total <- sum(d^2)
+  } else {
+    stop('Expected a object of class prcomp, princomp, PCA, or lda')
+  }
+  
+  # Scores
+  choices <- pmin(choices, ncol(u))
+  df.u <- as.data.frame(sweep(u[,choices], 2, d[choices]^obs.scale, FUN='*'))
+  
+  # Directions
+  v <- sweep(v, 2, d^var.scale, FUN='*')
+  df.v <- as.data.frame(v[, choices])
+  
+  names(df.u) <- c('xvar', 'yvar')
+  names(df.v) <- names(df.u)
+  
+  if(pc.biplot) {
+    df.u <- df.u * nobs.factor
+  }
+  
+  # Scale the radius of the correlation circle so that it corresponds to 
+  # a data ellipse for the standardized PC scores
+  r <- sqrt(qchisq(circle.prob, df = 2)) * prod(colMeans(df.u^2))^(1/4)
+  
+  # Scale directions
+  v.scale <- rowSums(v^2)
+  df.v <- r * df.v / sqrt(max(v.scale))
+  
+  # Change the labels for the axes
+  if(obs.scale == 0) {
+    u.axis.labs <- paste('standardized PC', choices, sep='')
+  } else {
+    u.axis.labs <- paste('PC', choices, sep='')
+  }
+  
+  # Append the proportion of explained variance to the axis labels
+  u.axis.labs <- paste(u.axis.labs, 
+                       sprintf('(%0.1f%% explained var.)', 
+                               100 * pcobj$sdev[choices]^2/sum(pcobj$sdev^2)))
+  
+  # Score Labels
+  if(!is.null(labels)) {
+    df.u$labels <- labels
+  }
+  
+  # Grouping variable
+  if(!is.null(groups)) {
+    df.u$groups <- groups
+  }
+  
+  # Variable Names
+  if(varname.abbrev) {
+    df.v$varname <- abbreviate(rownames(v))
+  } else {
+    df.v$varname <- rownames(v)
+  }
+  
+  # Variables for text label placement
+  df.v$angle <- with(df.v, (180/pi) * atan(yvar / xvar))
+  df.v$hjust = with(df.v, (1 - varname.adjust * sign(xvar)) / 2)
+  
+  # Base plot
+  g <- ggplot(data = df.u, aes(x = xvar, y = yvar)) + 
+    xlab(u.axis.labs[1]) + ylab(u.axis.labs[2]) + coord_equal()
+  
+  if(var.axes) {
+    # Draw circle
+    if(circle) 
+    {
+      theta <- c(seq(-pi, pi, length = 50), seq(pi, -pi, length = 50))
+      circle <- data.frame(xvar = r * cos(theta), yvar = r * sin(theta))
+      g <- g + geom_path(data = circle, color = muted('white'), 
+                         size = 1/2, alpha = 1/3)
+    }
+    
+    # Draw directions
+    g <- g +
+      geom_segment(data = df.v,
+                   aes(x = 0, y = 0, xend = xvar, yend = yvar),
+                   arrow = arrow(length = unit(1/2, 'picas'), type = "closed"), 
+                   color = 'grey90', linetype = "dashed")
+  }
+  
+  # Draw either labels or points
+  if(!is.null(df.u$labels)) {
+    if(!is.null(df.u$groups)) {
+      g <- g + geom_text(aes(label = labels, color = groups), 
+                         size = labels.size)
+    } else {
+      g <- g + geom_text(aes(label = labels), size = labels.size)      
+    }
+  } else {
+    if(!is.null(df.u$groups)) {
+      g <- g + geom_point(aes(color = groups), alpha = alpha)
+    } else {
+      g <- g + geom_point(alpha = alpha)      
+    }
+  }
+  
+  # Overlay a concentration ellipse if there are groups
+  if(!is.null(df.u$groups) && ellipse) {
+    theta <- c(seq(-pi, pi, length = 50), seq(pi, -pi, length = 50))
+    circle <- cbind(cos(theta), sin(theta))
+    
+    ell <- ddply(df.u, 'groups', function(x) {
+      if(nrow(x) <= 2) {
+        return(NULL)
+      }
+      sigma <- var(cbind(x$xvar, x$yvar))
+      mu <- c(mean(x$xvar), mean(x$yvar))
+      ed <- sqrt(qchisq(ellipse.prob, df = 2))
+      data.frame(sweep(circle %*% chol(sigma) * ed, 2, mu, FUN = '+'), 
+                 groups = x$groups[1])
+    })
+    names(ell)[1:2] <- c('xvar', 'yvar')
+    g <- g + geom_path(data = ell, aes(color = groups, group = groups))
+  }
+  
+  # Label the variable axes
+  if(var.axes) {
+    g <- g + 
+      geom_text(data = df.v, 
+                aes(label = varname, x = xvar, y = yvar, 
+                    angle = angle, hjust = hjust), 
+                color = 'gray50', size = varname.size)
+  }
+  
+  return(g)
+}
+
 
 calculate_aa_comp_datasets <- function(methods, n_rep, data_path) {
   lapply(methods, function(i) {
@@ -174,7 +336,7 @@ get_pca_aa_comp_plot <- function(aa_comp_all, dataset_colors) {
   
   pca_res_all <- prcomp(pca_data_all[, 4:ncol(pca_data_all)], center = TRUE, scale = TRUE)
   
-  ggbiplot(pca_res_all, choices = 1:2) +
+  my_ggbiplot(pca_res_all, choices = 1:2) +
     theme_bw() +
     geom_point(aes(color = pca_data_all[["method"]], shape = pca_data_all[["method"]]), size = 3) +
     theme(plot.title = element_text(hjust = 0.5)) +
@@ -201,7 +363,7 @@ get_pca_prop_plot <- function(df_all, methods, dataset_colors) {
   
   pca_prop_res_all <- prcomp(props_all[, 1:(ncol(props_all)-3)], center = TRUE, scale = TRUE)
   
-  ggbiplot(pca_prop_res_all, choices = 1:2) +
+  my_ggbiplot(pca_prop_res_all, choices = 1:2) +
     #ggtitle("PCA on means of physicochemical properties with positive dataset") +
     geom_point(aes(color = props_all[["method"]], shape = props_all[["method"]]), size = 3) +
     theme_bw() +
@@ -319,4 +481,32 @@ get_sequence_length_table <- function(df_all, data_path) {
     xtable %>% 
     print(file = paste0(data_path, "Publication_results/sequence_length_table.txt"),
           include.rownames = FALSE)
+}
+
+
+get_statistical_analysis_plot_aa_comp_methods <- function(aa_comp_peptides_all) {
+  combns <- combn(unique(aa_comp_peptides_all[["method"]]), 2, simplify = FALSE)
+  test_res_methods <- lapply(seq_along(combns), function(ith_combn) {
+    test_dat <- filter(aa_comp_peptides_all, method  %in% combns[[ith_combn]])
+    lapply(unique(aa_comp_peptides_all[["Amino acid"]]), function(ith_aa) {
+      data.frame(method1 = combns[[ith_combn]][1], 
+                 method2 = combns[[ith_combn]][2],
+                 aa = ith_aa,
+                 pval = wilcox.test(x = filter(test_dat, `Amino acid` == ith_aa, method == combns[[ith_combn]][1])[["Frequency"]],
+                                    y = filter(test_dat, `Amino acid` == ith_aa, method == combns[[ith_combn]][2])[["Frequency"]],
+                                    exact = FALSE)[["p.value"]])
+    }) %>% bind_rows() 
+  }) %>% bind_rows() %>%
+    mutate(pval_adjusted = p.adjust(pval)) %>%
+    select(-pval) %>%
+    group_by(aa, method1, method2) %>%
+    dplyr::summarise(is_signif = pval_adjusted < 0.05) 
+  
+  ggplot(test_res_methods, aes(x = method1, y = method2, fill = is_signif)) +
+    geom_tile(color = "white") +
+    facet_wrap(~aa) +
+    theme_bw() +
+    theme(panel.grid.major = element_blank(),
+          axis.text.x = element_text(angle = 90)) +
+    scale_fill_manual("Is significant", values = c(`FALSE` = "#76bef2", `TRUE` = "#ff4242"))
 }
