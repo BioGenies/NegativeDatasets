@@ -100,3 +100,28 @@ ggplot(detailed_stats_mean, aes(x = method, y = seq_source, fill = mean_AUC)) +
   xlab("Sampling method used for generation of training negative dataset") +
   ylab("Sampling method used for generation of test negative dataset")
 dev.off()
+
+filter(detailed_stats, architecture == "Deep-AmPEP30",
+       method %in% c("iAMP2L", "Wang")) %>% 
+  ggplot(aes(x = seq_source, y = AUC)) +
+  geom_point() +
+  facet_wrap(~ method) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90), legend.position = "bottom")
+
+
+filter(detailed_stats, architecture == "Deep-AmPEP30") %>% 
+  ggplot(aes(x = seq_source, y = AUC)) +
+  geom_point() +
+  facet_wrap(~ method) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90), legend.position = "bottom")
+
+
+library(ggbeeswarm)
+filter(detailed_stats_mean, architecture == "Deep-AmPEP30") %>% 
+  ggplot(aes(x = seq_source, y = mean_AUC, color = method)) +
+  geom_quasirandom(method = "smiley") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90), legend.position = "bottom")
+
