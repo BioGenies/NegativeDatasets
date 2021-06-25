@@ -80,12 +80,16 @@ detailed_stats <- lapply(architectures, function(ith_architecture) {
 }) %>% bind_rows()
 
 
-detailed_stats <- readRDS("./drafts/detailed_stats.rds")
+detailed_stats <- readRDS("./drafts/detailed_stats.rds") %>%
+  mutate(method = factor(method, levels = sort(unique(method))),
+         seq_source = factor(seq_source, levels = sort(unique(seq_source)), labels = levels(method)))
+
 
 detailed_stats_mean <- detailed_stats %>% 
   group_by(architecture, method, seq_source) %>% 
   summarise(mean_AUC = mean(AUC),
-            sd = sd(AUC))
+            sd = sd(AUC)) %>% 
+  ungroup()
 
 pdf("./drafts/architecture-benchmark.pdf", height = 10, width = 9)
 ggplot(detailed_stats_mean, aes(x = method, y = seq_source, fill = mean_AUC)) +
@@ -124,4 +128,28 @@ filter(detailed_stats_mean, architecture == "Deep-AmPEP30") %>%
   geom_quasirandom(method = "smiley") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90), legend.position = "bottom")
+
+# method = train
+# seq_source = test
+
+reference_auc_df <- detailed_stats_mean %>%
+  filter(method == seq_source) %>% 
+  select(architecture, seq_source, reference_AUC = mean_AUC)
+
+library(ggrepel)
+
+inner_join(detailed_stats_mean, reference_auc_df) %>% 
+  mutate(delta_AUC = abs(reference_AUC - mean_AUC)) %>% 
+  group_by(architecture) %>% 
+  summarise(median_mean_AUC = median(mean_AUC),
+            median_mean_AUC_min = median(mean_AUC) - mad(mean_AUC),
+            median_mean_AUC_max = median(mean_AUC) + mad(mean_AUC),
+            mad_delta_AUC = mad(delta_AUC)) %>% 
+  ggplot(aes(x = mad_delta_AUC, y = median_mean_AUC, 
+             ymin = median_mean_AUC_min, ymax = median_mean_AUC_max,
+             color = architecture, label = architecture)) +
+  geom_point(size = 3) +
+  geom_errorbar() +
+  geom_label_repel()
+
 
