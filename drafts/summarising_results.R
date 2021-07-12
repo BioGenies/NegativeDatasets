@@ -123,11 +123,16 @@ filter(detailed_stats, architecture == "Deep-AmPEP30") %>%
 
 
 library(ggbeeswarm)
-filter(detailed_stats_mean, architecture == "Deep-AmPEP30") %>% 
+filter(detailed_stats_mean, architecture == "AMPScannerV2") %>% 
   ggplot(aes(x = seq_source, y = mean_AUC, color = method)) +
   geom_quasirandom(method = "smiley") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90), legend.position = "bottom")
+
+filter(detailed_stats, architecture == "AMPScannerV2") %>% 
+  ggplot(aes(x = seq_source, y = AUC)) + 
+  geom_point() +
+  facet_wrap(~method)
 
 # method = train
 # seq_source = test
@@ -186,3 +191,12 @@ p <- inner_join(reference_auc_df %>%
 png("./drafts/reference_vs_nonreference.png", width = 800, height = 800)
 p
 dev.off()
+
+
+group_by(detailed_stats, architecture, seq_source) %>% 
+  summarise(mean_AUC = mean(AUC)) %>% 
+  ggplot(aes(x = seq_source, y = mean_AUC)) +
+  geom_col() +
+  facet_wrap(~architecture) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90), legend.position = "bottom")
