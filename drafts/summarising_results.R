@@ -138,6 +138,7 @@ reference_auc_df <- detailed_stats_mean %>%
 
 library(ggrepel)
 
+pdf("./drafts/mad_mean_plot.pdf")
 inner_join(detailed_stats_mean, reference_auc_df) %>% 
   mutate(delta_AUC = abs(reference_AUC - mean_AUC)) %>% 
   group_by(architecture) %>% 
@@ -151,5 +152,37 @@ inner_join(detailed_stats_mean, reference_auc_df) %>%
   geom_point(size = 3) +
   geom_errorbar() +
   geom_label_repel()
+dev.off()
 
+head(detailed_stats)
 
+pdf("./drafts/sd_mean_plot.pdf")
+group_by(detailed_stats, architecture, method, seq_source) %>% 
+  summarise(mean_AUC = mean(AUC)) %>% 
+  ungroup() %>% 
+  group_by(architecture) %>% 
+  summarise(sd_AUC = sd(mean_AUC), mean_AUC = mean(mean_AUC)) %>% 
+  ggplot(aes(x = sd_AUC, y = mean_AUC,
+             color = architecture, label = architecture)) +
+  geom_point(size = 3) +
+  geom_label_repel()
+dev.off()
+
+p <- inner_join(reference_auc_df %>% 
+             group_by(architecture) %>% 
+             summarise(reference_mean_AUC = mean(reference_AUC)),
+           detailed_stats_mean %>%
+             filter(method != seq_source) %>% 
+             select(architecture, seq_source, nonreference_AUC = mean_AUC) %>% 
+             group_by(architecture) %>% 
+             summarise(nonreference_mean_AUC = mean(nonreference_AUC))) %>% 
+  ggplot(aes(x = reference_mean_AUC, y = nonreference_mean_AUC,
+             color = architecture, label = architecture)) +
+  geom_point() +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_label_repel() +
+  coord_equal()
+
+png("./drafts/reference_vs_nonreference.png", width = 800, height = 800)
+p
+dev.off()
