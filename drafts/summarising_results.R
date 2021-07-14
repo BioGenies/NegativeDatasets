@@ -42,6 +42,20 @@ all_results <- pblapply(architectures, function(ith_architecture) {
   bind_rows()
 
 
+part_dat <- filter(all_results, rep == 1) 
+
+proper_pred_df <- group_by(part_dat, ID, target, method) %>% 
+  summarise(mean_pred = mean(prediction))
+
+group_by(proper_pred_df, target, mean_pred, method) %>% 
+  summarise(n = length(mean_pred)) %>% 
+  ungroup() %>% 
+  group_by(target, mean_pred) %>% 
+  mutate(n_frac = n/sum(n)) %>% 
+  ggplot(aes(x = mean_pred, y = n_frac, fill = as.factor(target))) +
+  geom_col(width = 0.05, position = "dodge") +
+  facet_wrap( ~ method, labeller = label_both, nrow = 2)
+
 # stats <- all_results %>% 
 #   group_by(architecture, method, rep) %>% 
 #   summarise(AUC = auc(truth = as.factor(target), prob = probability, positive = "1"),
@@ -60,6 +74,7 @@ all_results <- pblapply(architectures, function(ith_architecture) {
 # Results on each method separately 
 seqtype_all_results <- all_results %>% 
   mutate(seq_source = sapply(all_results[["ID"]], function(i) gsub("method=", "", strsplit(i, "_")[[1]][3])))
+
 detailed_stats <- lapply(architectures, function(ith_architecture) {
   lapply(methods, function(ith_method) {
     lapply(1:5, function(ith_rep) {
