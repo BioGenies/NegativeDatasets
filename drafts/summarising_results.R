@@ -74,12 +74,13 @@ group_by(proper_pred_df, target, mean_pred, method) %>%
 
 # Results on each method separately 
 seqtype_all_results <- all_results %>% 
-  mutate(seq_source = sapply(all_results[["ID"]], function(i) gsub("method=", "", strsplit(i, "_")[[1]][3])))
+  mutate(seq_source = sapply(all_results[["ID"]], function(i) gsub("method=", "", strsplit(i, "_")[[1]][3]))) %>% 
+  filter(seq_source != "AmPEP")
 
 detailed_stats <- lapply(architectures, function(ith_architecture) {
   lapply(methods, function(ith_method) {
     lapply(1:5, function(ith_rep) {
-      lapply(unique(seqtype_all_results[["seq_source"]])[2:14], function(ith_seq_source) {
+      lapply(unique(seqtype_all_results[["seq_source"]])[2:13], function(ith_seq_source) {
         dat <- filter(seqtype_all_results, architecture == ith_architecture, method == ith_method, 
                       seq_source %in% c(ith_seq_source, "AMP=1"), rep == ith_rep)
         data.frame(architecture = ith_architecture,

@@ -10,6 +10,7 @@ library(gridExtra)
 library(ggbiplot)
 library(cowplot)
 library(xtable)
+library(seqR)
 
 
 if(Sys.info()[["nodename"]] == "kasia-MACH-WX9") {
