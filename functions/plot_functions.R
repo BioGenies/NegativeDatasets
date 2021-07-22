@@ -20,20 +20,14 @@ calculate_properties <- function(ds_neg, method, rep) {
              rep = rep,
              len = lengths(ds_neg),
              BIGC670101 = encode_seq(ds_neg, "BIGC670101"),
-             ARGP820101 = encode_seq(ds_neg, "ARGP820101"),
              CHAM820101 = encode_seq(ds_neg, "CHAM820101"),
              CHOP780201 = encode_seq(ds_neg, "CHOP780201"),
              CHOP780202 = encode_seq(ds_neg, "CHOP780202"),
              CHOP780203 = encode_seq(ds_neg, "CHOP780203"),
-             FASG760101 = encode_seq(ds_neg, "FASG760101"),
-             FASG760104 = encode_seq(ds_neg, "FASG760104"),
-             FASG760105 = encode_seq(ds_neg, "FASG760105"),
              FAUJ880103 = encode_seq(ds_neg, "FAUJ880103"),
              KLEP840101 = encode_seq(ds_neg, "KLEP840101"),
              KYTJ820101 = encode_seq(ds_neg, "KYTJ820101"),
-             ZIMJ680103 = encode_seq(ds_neg, "ZIMJ680103"),
-             ENGD860101 = encode_seq(ds_neg, "ENGD860101"),
-             FASG890101 = encode_seq(ds_neg, "FASG890101"))
+             ZIMJ680103 = encode_seq(ds_neg, "ZIMJ680103"))
 }
 
 my_ggbiplot <- function(pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE, 
@@ -434,7 +428,7 @@ get_sequence_length_plot <- function(df_all) {
   
   blank <- ggplot() + theme_void()
   
-  p <- plot_grid(plotlist = list(plist[["Positive"]], plist[["AMAP"]], plist[["GabereNoble"]], plist[["CSAMPPred"]], plist[["AmPEP"]],
+  p <- plot_grid(plotlist = list(plist[["Positive"]], plist[["AMAP"]], plist[["GabereNoble"]], plist[["CSAMPPred"]],
                  blank, plist[["AmpGram"]], plist[["Wang"]], plist[["dbAMP"]], plist[["ampir-mature"]],
                  blank, plist[["AMPlify"]], blank, plist[["iAMP2L"]], plist[["ampir-precursor"]],
                  blank, plist[["AMPScannerV2"]], blank, blank, blank, blank, plist[["Witten"]]),

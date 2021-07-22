@@ -73,12 +73,12 @@ list(
   ),
   tar_target(
     methods,
-    c("AMAP", "AmPEP", "AmpGram", "ampir-mature", "ampir-precursor", "AMPlify",
+    c("AMAP", "AmpGram", "ampir-mature", "ampir-precursor", "AMPlify",
       "AMPScannerV2", "CSAMPPred", "dbAMP", "GabereNoble", "iAMP2L", "Wang", "Witten")
   ),
   tar_target(
     dataset_colors,
-    c(Positive = "#ff4242", AMAP = "#f2b176", AmPEP = "#b4b4b4", AmpGram = "#f27676", `ampir-mature` = "#76bef2",
+    c(Positive = "#ff4242", AMAP = "#f2b176", AmpGram = "#f27676", `ampir-mature` = "#76bef2",
       `ampir-precursor` = "#76eff2", AMPlify = "#f2d676", AMPScannerV2 = "#b976f2", CSAMPPred = "#76f2be", 
       dbAMP = "#f276e8", GabereNoble = "#7688f2", iAMP2L = "#eff275", Wang = "#80f276", Witten = "#ccf276")
   ),

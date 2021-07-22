@@ -4,6 +4,7 @@ library(tidyr)
 library(ggplot2)
 library(hmeasure)
 library(pbapply)
+library(biogram)
 
 results_path <- "/media/kasia/Data/Dropbox/Projekty/BioNgramProjects/NegativeDatasets/Results/"
 
@@ -13,9 +14,9 @@ if(Sys.info()[["nodename"]] == "huawei")
 
 architectures <- list.files(results_path)
 
-methods <- c("iAMP2L", "AmPEP", "dbAMP", "ampir-precursor", "ampir-mature", "CSAMPPred", 
+methods <- c("iAMP2L", "dbAMP", "ampir-precursor", "ampir-mature", "CSAMPPred", 
              "Wang", "AmpGram", "Witten", "AMPScannerV2", "GabereNoble", "AMAP", "AMPlify")
-methods_seqammes <- c("iAMP-2L", "AmPEP", "dbAMP", "ampir-precursor", "ampir-mature", "CS-AMPPred",
+methods_seqnames <- c("iAMP-2L", "dbAMP", "ampir-precursor", "ampir-mature", "CS-AMPPred",
                       "Wang", "AmpGram", "Witten&Witten", "AMPScannerV2", "Gabere&Noble", "AMAP", "AMPlify")
 
 
@@ -215,3 +216,42 @@ group_by(detailed_stats, architecture, seq_source) %>%
   facet_wrap(~architecture) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90), legend.position = "bottom")
+
+
+
+# Pairwise comparisons of training and testing datasets vs. AUC
+# Sequence length
+seq_path <- "/media/kasia/Data/Dropbox/Projekty/BioNgramProjects/NegativeDatasets/Datasets/"
+test_res_length <- lapply(unique(detailed_stats_mean[["architecture"]]), function(ith_architecture) {
+  lapply(1:5, function(ith_rep) {
+    lapply(methods, function(ith_method) {
+      train <- read_fasta(paste0(seq_path, "Training_method_", ith_method, "_rep", ith_rep, ".fasta"))
+      test <- read_fasta(paste0(seq_path, "Benchmark_rep", ith_rep, ".fasta"))
+      train_filtered <- train[which(grepl("AMP=0", names(train)))]
+      lapply(methods_seqnames, function(ith_seqtype) {
+        test_filtered <- test[which(grepl(ith_seqtype, names(test)))]
+        data.frame(architecture = ith_architecture,
+                   method = ith_method,
+                   seq_source = ith_seqtype,
+                   pval = ks.test(x = lengths(train_filtered), y = lengths(test_filtered))[["p.value"]])
+      }) %>% bind_rows()
+    }) %>% bind_rows()
+  }) %>% bind_rows()
+}) %>% bind_rows()
+
+inner_join(test_res_length, detailed_stats) %>% 
+  ggplot(aes(x = pval, y = AUC, color = architecture)) +
+  geom_jitter(size = 3, alpha = 0.1) 
+
+inner_join(test_res_length, detailed_stats) %>% 
+  ggplot(aes(x = pval, y = AUC, color = architecture)) +
+  geom_jitter(size = 3, alpha = 0.1) +
+  facet_wrap(~architecture) 
+
+
+# Distribution of replication mean AUC 
+detailed_stats_mean %>% 
+  ggplot(aes(y = mean_AUC, x = architecture, color = architecture)) +
+  geom_violin(aes(fill = architecture), alpha = 0.25) +
+  geom_point() +
+  facet_wrap(~method)
