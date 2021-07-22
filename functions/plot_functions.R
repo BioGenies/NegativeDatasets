@@ -264,9 +264,9 @@ get_ngram_counts_sum <- function(methods, n_rep, data_path) {
 
 get_ngram_counts_sum_pos <- function(positive) {
   ngram_counts_sum_pos <- count_multimers(positive,
-                  k_vector = c(rep(2, 4), rep(3, 4)),
-                  kmer_gaps_list = list(NULL, 1, 2, 3, c(0, 0), c(1, 0), c(0, 1), c(1, 1)),
-                  alphabet = toupper(colnames(biogram::aaprop))) %>%
+                                          k_vector = c(rep(2, 4), rep(3, 4)),
+                                          kmer_gaps_list = list(NULL, 1, 2, 3, c(0, 0), c(1, 0), c(0, 1), c(1, 1)),
+                                          alphabet = toupper(colnames(biogram::aaprop))) %>%
     as.matrix() %>% 
     colSums()/length(positive) 
   ngram_counts_sum_pos %>% 
@@ -282,7 +282,7 @@ get_aa_comp_heatmap <- function(aa_comp_all) {
     pivot_wider(names_from = "aa", values_from = "Freq", values_fill = 0) %>% 
     mutate(Dataset = ifelse(Dataset == "Positive", "Positive", paste0(method, "_rep", rep))) %>% 
     select(-c(method, rep)) 
-
+  
   clustering_methods <- as.dendrogram(hclust(dist(as.matrix(aa_comp_heatmap_dat[,2:21]))))
   methods_order <- order.dendrogram(clustering_methods)
   
@@ -428,14 +428,14 @@ get_sequence_length_plot <- function(df_all) {
   
   blank <- ggplot() + theme_void()
   
-  p <- plot_grid(plotlist = list(plist[["Positive"]], plist[["AMAP"]], plist[["GabereNoble"]], plist[["CSAMPPred"]],
-                 blank, plist[["AmpGram"]], plist[["Wang"]], plist[["dbAMP"]], plist[["ampir-mature"]],
-                 blank, plist[["AMPlify"]], blank, plist[["iAMP2L"]], plist[["ampir-precursor"]],
-                 blank, plist[["AMPScannerV2"]], blank, blank, blank, blank, plist[["Witten"]]),
-            nrow = 5, ncol = 5, rel_widths = c(1, 2.5, 2.5, 2.5, 2.5)) 
+  p <- plot_grid(plotlist = list(plist[["Positive"]], plist[["AMAP"]], plist[["GabereNoble"]], plist[["CSAMPPred"]], plist[["ampir-mature"]], 
+                                 blank, plist[["AmpGram"]], plist[["Wang"]], plist[["dbAMP"]], plist[["ampir-precursor"]],
+                                 blank, plist[["AMPlify"]], blank, plist[["iAMP2L"]], blank,
+                                 blank, plist[["AMPScannerV2"]], blank, blank, blank, blank, plist[["Witten"]]),
+                 nrow = 5, ncol = 5, rel_widths = c(1, 2.5, 2.5, 2.5, 2.5)) 
   
   grid.arrange(arrangeGrob(p, left = textGrob("Length", rot = 90), bottom = textGrob("Replication")))
-
+  
 }
 
 get_statistical_analysis_plot_aa_comp_replicates <- function(aa_comp_peptides) {
