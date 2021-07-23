@@ -19,7 +19,14 @@ methods <- c("iAMP2L", "dbAMP", "ampir-precursor", "ampir-mature", "CSAMPPred",
 methods_seqnames <- c("iAMP-2L", "dbAMP", "ampir-precursor", "ampir-mature", "CS-AMPPred",
                       "Wang", "AmpGram", "Witten&Witten", "AMPScannerV2", "Gabere&Noble", "AMAP", "AMPlify")
 
-
+change_method_names <- function(df) {
+  mutate(df, method = case_when(method == "iAMP2L" ~ "iAMP-2L",
+                                method == "CSAMPPred" ~ "CS-AMPPred",
+                                method == "Wang" ~ "Wang et. al",
+                                method == "Witten" ~ "Witten&Witten",
+                                method == "GabereNoble" ~ "Gabere&Noble",
+                                method %in% c("dbAMP", "ampir-precursor", "ampir-mature", "AmpGram", "AMAP", "AMPlify", "AMPScannerV2") ~ method))
+}
 
 # Results on whole benchmark datasets
 all_results <- pblapply(architectures, function(ith_architecture) {
@@ -98,6 +105,7 @@ detailed_stats <- lapply(architectures, function(ith_architecture) {
 
 
 detailed_stats <- readRDS("./drafts/detailed_stats.rds") %>%
+  change_method_names() %>% 
   mutate(method = factor(method, levels = sort(unique(method))),
          seq_source = factor(seq_source, levels = sort(unique(seq_source)), labels = levels(method)))
 
@@ -203,11 +211,35 @@ p <- inner_join(reference_auc_df %>%
   geom_point() +
   geom_abline(slope = 1, intercept = 0) +
   geom_label_repel() +
-  coord_equal()
+  coord_equal() +
+  theme_bw() +
+  xlim(c(0.5, 1)) +
+  ylim(c(0.5, 1))
 
 png("./drafts/reference_vs_nonreference.png", width = 800, height = 800)
 p
 dev.off()
+
+# reference - nonreference for different train datasets
+inner_join(reference_auc_df %>% 
+             group_by(architecture) %>% 
+             summarise(reference_mean_AUC = mean(reference_AUC)),
+           detailed_stats_mean %>%
+             filter(method != seq_source) %>% 
+             select(architecture, method, seq_source, nonreference_AUC = mean_AUC) %>% 
+             group_by(architecture, method) %>% 
+             summarise(nonreference_mean_AUC = mean(nonreference_AUC))) %>% 
+  ggplot(aes(x = reference_mean_AUC, y = nonreference_mean_AUC,
+             color = architecture, label = architecture)) +
+  geom_point() +
+  facet_wrap(~method) +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_label_repel() +
+  coord_equal() +
+  theme_bw() +
+  xlim(c(0.5, 1)) +
+  ylim(c(0.5, 1))
+  
 
 
 group_by(detailed_stats, architecture, seq_source) %>% 

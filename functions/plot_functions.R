@@ -11,23 +11,36 @@ get_prop_df <- function(methods, n_rep, data_path) {
       ds_neg <- ds[which(grepl("AMP=0", names(ds)))]
       calculate_properties(ds_neg, ith_method, j)
     }) %>% bind_rows()
-  }) %>% bind_rows()
+  }) %>% bind_rows() %>% 
+    change_method_names()
 }
+
+
+change_method_names <- function(df) {
+  mutate(df, method = case_when(method == "iAMP2L" ~ "iAMP-2L",
+                                method == "CSAMPPred" ~ "CS-AMPPred",
+                                method == "Wang" ~ "Wang et. al",
+                                method == "Witten" ~ "Witten&Witten",
+                                method == "GabereNoble" ~ "Gabere&Noble",
+                                method %in% c("dbAMP", "ampir-precursor", "ampir-mature", "AmpGram", "AMAP", 
+                                              "AMPlify", "AMPScannerV2", "Positive") ~ method))
+}
+
 
 calculate_properties <- function(ds_neg, method, rep) {
   data.frame(prot = names(ds_neg),
              method = method,
              rep = rep,
              len = lengths(ds_neg),
-             BIGC670101 = encode_seq(ds_neg, "BIGC670101"),
-             CHAM820101 = encode_seq(ds_neg, "CHAM820101"),
-             CHOP780201 = encode_seq(ds_neg, "CHOP780201"),
-             CHOP780202 = encode_seq(ds_neg, "CHOP780202"),
-             CHOP780203 = encode_seq(ds_neg, "CHOP780203"),
-             FAUJ880103 = encode_seq(ds_neg, "FAUJ880103"),
-             KLEP840101 = encode_seq(ds_neg, "KLEP840101"),
-             KYTJ820101 = encode_seq(ds_neg, "KYTJ820101"),
-             ZIMJ680103 = encode_seq(ds_neg, "ZIMJ680103"))
+             `Residue volume (Bigelow, 1967)` = encode_seq(ds_neg, "BIGC670101"),
+             `Polarizability parameter (Charton-Charton, 1982)` = encode_seq(ds_neg, "CHAM820101"),
+             `Normalized frequency of alpha-helix (Chou-Fasman, 1978b)` = encode_seq(ds_neg, "CHOP780201"),
+             `Normalized frequency of beta-sheet (Chou-Fasman, 1978b)` = encode_seq(ds_neg, "CHOP780202"),
+             `Normalized frequency of beta-turn (Chou-Fasman, 1978b)` = encode_seq(ds_neg, "CHOP780203"),
+             `Normalized van der Waals volume (Fauchere et al., 1988)` = encode_seq(ds_neg, "FAUJ880103"),
+             `Net charge (Klein et al., 1984)` = encode_seq(ds_neg, "KLEP840101"),
+             `Hydropathy index (Kyte-Doolittle, 1982)` = encode_seq(ds_neg, "KYTJ820101"),
+             `Polarity (Zimmerman et al., 1968)` = encode_seq(ds_neg, "ZIMJ680103"))
 }
 
 my_ggbiplot <- function(pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE, 
@@ -202,7 +215,8 @@ calculate_aa_comp_datasets <- function(methods, n_rep, data_path) {
         mutate(method = i,
                rep = j)
     }) %>% bind_rows()
-  }) %>% bind_rows()
+  }) %>% bind_rows() %>% 
+    change_method_names()
 }
 
 
@@ -220,7 +234,8 @@ calculate_aa_comp_peptides <- function(methods, n_rep, data_path) {
                  rep = j)
       }) %>% bind_rows()
     }) %>% bind_rows()
-  }) %>% bind_rows()
+  }) %>% bind_rows() %>% 
+    change_method_names()
 } 
 
 get_aa_comp_peptides_positive <- function(positive) {
@@ -259,7 +274,8 @@ get_ngram_counts_sum <- function(methods, n_rep, data_path) {
         mutate(method = i,
                rep = j)
     }) %>% bind_rows()
-  }) %>% bind_rows()
+  }) %>% bind_rows() %>% 
+    change_method_names()
 }
 
 get_ngram_counts_sum_pos <- function(positive) {
@@ -273,7 +289,7 @@ get_ngram_counts_sum_pos <- function(positive) {
     t() %>% 
     as.data.frame() %>% 
     mutate(method = "Positive",
-           rep = 1)
+           rep = 1) 
 }
 
 
@@ -353,7 +369,8 @@ get_pca_prop_plot <- function(df_all, methods, dataset_colors) {
            repetition = "1",
            dataset = "Positive")
   props_all <- bind_rows(props, props_pos) %>% 
-    mutate(method = factor(method, levels = names(dataset_colors)))
+    change_method_names() %>% 
+    mutate(method = factor(method, levels = names(dataset_colors))) 
   
   pca_prop_res_all <- prcomp(props_all[, 1:(ncol(props_all)-3)], center = TRUE, scale = TRUE)
   
@@ -372,6 +389,7 @@ get_aa_comp_barplot <- function(aa_comp_all, dataset_colors) {
   aa_comp_all %>% 
     group_by(Dataset, aa, method) %>% 
     dplyr::summarise(Frequency = mean(Freq), sd = sd(Freq)) %>% 
+    change_method_names() %>% 
     mutate(method = factor(method, levels = names(dataset_colors))) %>% 
     ggplot(aes(x = method, y = Frequency, fill = Dataset)) +
     geom_col(color = "black", size = 0.25) +
@@ -395,7 +413,7 @@ plot_pca_res_ngrams <- function(pca_ngram_res, ngram_counts_sum_all, dataset_col
     geom_point(aes(color = ngram_counts_sum_all[["method"]], shape = ngram_counts_sum_all[["method"]]), size = 3) +
     theme_bw() +
     scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
-    scale_shape_manual("Dataset", values = c(17, rep(16, 13)), labels = names(dataset_colors)) 
+    scale_shape_manual("Dataset", values = c(17, rep(16, 12)), labels = names(dataset_colors)) 
 }
 
 plot_pca_res_ngrams_zoom <- function(pca_ngram_res, ngram_counts_sum_all, dataset_colors) {
@@ -403,7 +421,7 @@ plot_pca_res_ngrams_zoom <- function(pca_ngram_res, ngram_counts_sum_all, datase
     geom_point(aes(color = ngram_counts_sum_all[["method"]], shape = ngram_counts_sum_all[["method"]]), size = 3) +
     theme_bw() +
     scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
-    scale_shape_manual("Dataset", values = c(17, rep(16, 13)), labels = names(dataset_colors)) +
+    scale_shape_manual("Dataset", values = c(17, rep(16, 12)), labels = names(dataset_colors)) +
     xlim(c(-0.7, -0.25)) +
     ylim(c(-0.85, -0.35)) + 
     theme(legend.position = "none", 

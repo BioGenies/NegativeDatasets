@@ -81,7 +81,7 @@ list(
     dataset_colors,
     c(Positive = "#ff4242", AMAP = "#f2b176", AmpGram = "#f27676", `ampir-mature` = "#76bef2",
       `ampir-precursor` = "#76eff2", AMPlify = "#f2d676", AMPScannerV2 = "#b976f2", CSAMPPred = "#76f2be", 
-      dbAMP = "#f276e8", GabereNoble = "#7688f2", iAMP2L = "#eff275", Wang = "#80f276", Witten = "#ccf276")
+      dbAMP = "#f276e8", `Gabere&Noble` = "#7688f2", `iAMP-2L` = "#eff275", `Wang et. al` = "#80f276", `Witten&Witten` = "#ccf276")
   ),
   tar_target(
     aa_comp_peptides,
