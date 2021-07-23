@@ -80,7 +80,7 @@ list(
   tar_target(
     dataset_colors,
     c(Positive = "#ff4242", AMAP = "#f2b176", AmpGram = "#f27676", `ampir-mature` = "#76bef2",
-      `ampir-precursor` = "#76eff2", AMPlify = "#f2d676", AMPScannerV2 = "#b976f2", CSAMPPred = "#76f2be", 
+      `ampir-precursor` = "#76eff2", AMPlify = "#f2d676", AMPScannerV2 = "#b976f2", `CS-AMPPred` = "#76f2be", 
       dbAMP = "#f276e8", `Gabere&Noble` = "#7688f2", `iAMP-2L` = "#eff275", `Wang et. al` = "#80f276", `Witten&Witten` = "#ccf276")
   ),
   tar_target(
@@ -159,7 +159,7 @@ list(
   tar_target(
     pca_prop,
     ggsave(filename = "pca_prop.eps",
-           get_pca_prop_plot(df_all, methods, dataset_colors),
+           get_pca_prop_plot(df_all, dataset_colors),
            path = paste0(data_path, "Publication_results/"),
            width = 10, height = 10)
   ),

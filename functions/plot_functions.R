@@ -40,7 +40,8 @@ calculate_properties <- function(ds_neg, method, rep) {
              `Normalized van der Waals volume (Fauchere et al., 1988)` = encode_seq(ds_neg, "FAUJ880103"),
              `Net charge (Klein et al., 1984)` = encode_seq(ds_neg, "KLEP840101"),
              `Hydropathy index (Kyte-Doolittle, 1982)` = encode_seq(ds_neg, "KYTJ820101"),
-             `Polarity (Zimmerman et al., 1968)` = encode_seq(ds_neg, "ZIMJ680103"))
+             `Polarity (Zimmerman et al., 1968)` = encode_seq(ds_neg, "ZIMJ680103"),
+             check.names = FALSE)
 }
 
 my_ggbiplot <- function(pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE, 
@@ -355,16 +356,18 @@ get_pca_aa_comp_plot <- function(aa_comp_all, dataset_colors) {
 }
 
 
-get_pca_prop_plot <- function(df_all, methods, dataset_colors) {
-  props <- lapply(methods, function(i) {
+get_pca_prop_plot <- function(df_all, dataset_colors) {
+  props <- lapply(unique(filter(df_all, Dataset == "Negative")[["method"]]), function(i) {
     lapply(1:5, function(j) {
-      data.frame(t(colMeans(filter(df_all, method == i, rep == j)[, 5:(ncol(df_all)-1)]))) %>% 
+      data.frame(t(colMeans(filter(df_all, method == i, rep == j)[, 5:(ncol(df_all)-1)])),
+                 check.names = FALSE) %>% 
         mutate(method = factor(i),
                repetition = factor(j),
                dataset = "Negative")
     }) %>% bind_rows()
   }) %>% bind_rows()
-  props_pos <- data.frame(t(colMeans(filter(df_all, method == "Positive")[, 5:(ncol(df_all)-1)]))) %>% 
+  props_pos <- data.frame(t(colMeans(filter(df_all, method == "Positive")[, 5:(ncol(df_all)-1)])),
+                          check.names = FALSE) %>% 
     mutate(method = "Positive", 
            repetition = "1",
            dataset = "Positive")
@@ -380,8 +383,9 @@ get_pca_prop_plot <- function(df_all, methods, dataset_colors) {
     theme_bw() +
     theme(plot.title = element_text(hjust = 0.5)) +
     scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
-    scale_shape_manual("Dataset", values = c(17, rep(16, 13)), labels = names(dataset_colors)) +
-    xlim(c(-2.5, 6))
+    scale_shape_manual("Dataset", values = c(17, rep(16, 12)), labels = names(dataset_colors)) +
+    xlim(c(-3.5, 6.5)) +
+    ylim(-4, 2.5)
 }
 
 
