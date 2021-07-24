@@ -169,9 +169,9 @@ my_ggbiplot <- function(pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE,
     }
   } else {
     if(!is.null(df.u$groups)) {
-      g <- g + geom_point(aes(color = groups), alpha = alpha)
+     # g <- g + geom_point(aes(color = groups), alpha = alpha)
     } else {
-      g <- g + geom_point(alpha = alpha)      
+    #  g <- g + geom_point(alpha = alpha)      
     }
   }
   
@@ -372,20 +372,19 @@ get_pca_prop_plot <- function(df_all, dataset_colors) {
            repetition = "1",
            dataset = "Positive")
   props_all <- bind_rows(props, props_pos) %>% 
-    change_method_names() %>% 
     mutate(method = factor(method, levels = names(dataset_colors))) 
   
   pca_prop_res_all <- prcomp(props_all[, 1:(ncol(props_all)-3)], center = TRUE, scale = TRUE)
   
-  my_ggbiplot(pca_prop_res_all, choices = 1:2) +
+  my_ggbiplot(pca_prop_res_all, choices = 1:2, varname.size = 2, varname.adjust = 1.1) +
     #ggtitle("PCA on means of physicochemical properties with positive dataset") +
-    geom_point(aes(color = props_all[["method"]], shape = props_all[["method"]]), size = 3) +
+    geom_point(aes(color = props_all[["method"]], shape = props_all[["method"]]), size = 1.5) +
     theme_bw() +
     theme(plot.title = element_text(hjust = 0.5)) +
     scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
     scale_shape_manual("Dataset", values = c(17, rep(16, 12)), labels = names(dataset_colors)) +
-    xlim(c(-3.5, 6.5)) +
-    ylim(-4, 2.5)
+    xlim(c(-6, 6.5)) +
+    ylim(-6, 4)
 }
 
 
