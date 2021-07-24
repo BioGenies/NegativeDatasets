@@ -377,14 +377,13 @@ get_pca_prop_plot <- function(df_all, dataset_colors) {
   pca_prop_res_all <- prcomp(props_all[, 1:(ncol(props_all)-3)], center = TRUE, scale = TRUE)
   
   my_ggbiplot(pca_prop_res_all, choices = 1:2, varname.size = 2, varname.adjust = 1.1) +
-    #ggtitle("PCA on means of physicochemical properties with positive dataset") +
     geom_point(aes(color = props_all[["method"]], shape = props_all[["method"]]), size = 1.5) +
     theme_bw() +
     theme(plot.title = element_text(hjust = 0.5)) +
     scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
     scale_shape_manual("Dataset", values = c(17, rep(16, 12)), labels = names(dataset_colors)) +
-    xlim(c(-6, 6.5)) +
-    ylim(-6, 4)
+    xlim(c(-5.5, 6.2)) +
+    ylim(c(-5.5, 4))
 }
 
 
@@ -392,7 +391,6 @@ get_aa_comp_barplot <- function(aa_comp_all, dataset_colors) {
   aa_comp_all %>% 
     group_by(Dataset, aa, method) %>% 
     dplyr::summarise(Frequency = mean(Freq), sd = sd(Freq)) %>% 
-    change_method_names() %>% 
     mutate(method = factor(method, levels = names(dataset_colors))) %>% 
     ggplot(aes(x = method, y = Frequency, fill = Dataset)) +
     geom_col(color = "black", size = 0.25) +
@@ -449,10 +447,10 @@ get_sequence_length_plot <- function(df_all) {
   
   blank <- ggplot() + theme_void()
   
-  p <- plot_grid(plotlist = list(plist[["Positive"]], plist[["AMAP"]], plist[["GabereNoble"]], plist[["CSAMPPred"]], plist[["ampir-mature"]], 
-                                 blank, plist[["AmpGram"]], plist[["Wang"]], plist[["dbAMP"]], plist[["ampir-precursor"]],
-                                 blank, plist[["AMPlify"]], blank, plist[["iAMP2L"]], blank,
-                                 blank, plist[["AMPScannerV2"]], blank, blank, blank, blank, plist[["Witten"]]),
+  p <- plot_grid(plotlist = list(plist[["Positive"]], plist[["AMAP"]], plist[["Gabere&Noble"]], plist[["CS-AMPPred"]], plist[["ampir-mature"]], 
+                                 blank, plist[["AmpGram"]], plist[["Wang et. al"]], plist[["dbAMP"]], plist[["ampir-precursor"]],
+                                 blank, plist[["AMPlify"]], blank, plist[["iAMP-2L"]], blank,
+                                 blank, plist[["AMPScannerV2"]], blank, blank, blank, blank, plist[["Witten&Witten"]]),
                  nrow = 5, ncol = 5, rel_widths = c(1, 2.5, 2.5, 2.5, 2.5)) 
   
   grid.arrange(arrangeGrob(p, left = textGrob("Length", rot = 90), bottom = textGrob("Replication")))
