@@ -95,7 +95,7 @@ list(
     aa_comp_peptides_all,
     bind_rows(aa_comp_peptides,
               aa_comp_peptides_pos) %>% 
-      mutate(method = factor(method, levels = c(methods, "Positive")))
+      mutate(method = factor(method, levels = names(dataset_colors)))
   ),
   tar_target(
     aa_comp,
