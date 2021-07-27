@@ -41,13 +41,15 @@ all_results <- pblapply(architectures, function(ith_architecture) {
         res <- data.frame(ID = c(), target = c(), prediction = c(), probability = c(), rep = c(), method = c(), 
                           architecture = c())
       
-      res
+      res %>% 
+        mutate(target = ifelse(grepl("AMP=1", ID), 1, 0))
     }) %>% 
       bind_rows()
   }) %>% 
     bind_rows()
 })%>% 
-  bind_rows()
+  bind_rows() %>% 
+  change_method_names()
 
 
 part_dat <- filter(all_results, rep == 1) 
@@ -82,10 +84,11 @@ group_by(proper_pred_df, target, mean_pred, method) %>%
 # Results on each method separately 
 seqtype_all_results <- all_results %>% 
   mutate(seq_source = sapply(all_results[["ID"]], function(i) gsub("method=", "", strsplit(i, "_")[[1]][3]))) %>% 
-  filter(seq_source != "AmPEP")
+  filter(seq_source != "AmPEP") %>% 
+  mutate(seq_source = ifelse(seq_source == "Wang-et-al", "Wang et. al", seq_source))
 
 detailed_stats <- lapply(architectures, function(ith_architecture) {
-  lapply(methods, function(ith_method) {
+  lapply(unique(seqtype_all_results[["method"]]), function(ith_method) {
     lapply(1:5, function(ith_rep) {
       lapply(unique(seqtype_all_results[["seq_source"]])[2:13], function(ith_seq_source) {
         dat <- filter(seqtype_all_results, architecture == ith_architecture, method == ith_method, 
@@ -105,7 +108,6 @@ detailed_stats <- lapply(architectures, function(ith_architecture) {
 
 
 detailed_stats <- readRDS("./drafts/detailed_stats.rds") %>%
-  change_method_names() %>% 
   mutate(method = factor(method, levels = sort(unique(method))),
          seq_source = factor(seq_source, levels = sort(unique(seq_source)), labels = levels(method)))
 
@@ -288,3 +290,65 @@ detailed_stats_mean %>%
   geom_violin(aes(fill = architecture), alpha = 0.25) +
   geom_point() +
   facet_wrap(~method)
+
+### Fractions of problematic sequences
+
+seqtype_all_results %>% 
+  filter(target == 0) %>% 
+  group_by(rep, ID, seq_source) %>% 
+  summarise(mean_pred = mean(prediction)) %>% 
+  group_by(mean_pred, seq_source) %>% 
+  summarise(n = length(mean_pred)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = mean_pred, y = n)) +
+  geom_col() +
+  facet_wrap(~seq_source, ncol = 2, scales = "free_y")
+
+seqtype_all_results %>% 
+  filter(target == 0) %>% 
+  group_by(rep, ID, seq_source, method) %>% 
+  summarise(mean_pred = mean(prediction)) %>% 
+  group_by(mean_pred, seq_source, method) %>% 
+  summarise(n = length(mean_pred)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = mean_pred, y = n)) +
+  geom_col() +
+  facet_grid(seq_source~method, scales = "free_y")
+
+# Problematic sequences vs. AUC
+mean_architecture_method_independent_auc <- detailed_stats_mean %>% 
+  group_by(seq_source) %>% 
+  summarise(mean_AUC = mean(mean_AUC))
+
+seqtype_all_results %>% 
+  filter(target == 0) %>% 
+  group_by(rep, ID, seq_source) %>% 
+  summarise(mean_pred = mean(prediction)) %>% 
+  group_by(mean_pred, seq_source) %>% 
+  summarise(n = length(mean_pred)) %>% 
+  ungroup() %>% 
+  left_join(mean_architecture_method_independent_auc) %>% 
+  ggplot(aes(x = mean_pred, y = n, fill = mean_AUC)) +
+  geom_col() +
+  scale_fill_gradientn(colors = c("#ffe96b", "#ff4242", "#630000"), values = rescale(c(0, 0.08, 0.14), to = c(0, 1))) +
+  theme_bw() +
+  facet_wrap(~seq_source, ncol = 2, scales = "free_y")
+
+mean_architecture_independent_auc <- detailed_stats_mean %>% 
+  group_by(seq_source, method) %>% 
+  summarise(mean_AUC = mean(mean_AUC))
+
+seqtype_all_results %>% 
+  filter(target == 0) %>% 
+  group_by(rep, ID, seq_source, method) %>% 
+  summarise(mean_pred = mean(prediction)) %>% 
+  group_by(mean_pred, seq_source, method) %>% 
+  summarise(n = length(mean_pred)) %>% 
+  ungroup() %>% 
+  left_join(mean_architecture_independent_auc, by = c("seq_source", "method")) %>% 
+  ggplot(aes(x = mean_pred, y = n, fill = mean_AUC)) +
+  geom_col() +
+  scale_fill_gradientn(colors = c("#ffe96b", "#ff4242", "#630000"), values = rescale(c(0, 0.08, 0.14), to = c(0, 1))) +
+  theme_bw() +
+  facet_grid(seq_source~method, scales = "free_y") +
+  ggtitle("Training dataset sampling method (top), testing dataset sampling method (right)")
