@@ -5,6 +5,7 @@ library(ggplot2)
 library(hmeasure)
 library(pbapply)
 library(biogram)
+library(scales)
 
 results_path <- "/media/kasia/Data/Dropbox/Projekty/BioNgramProjects/NegativeDatasets/Results/"
 
@@ -315,9 +316,10 @@ seqtype_all_results %>%
   geom_col() +
   facet_grid(seq_source~method, scales = "free_y")
 
-# Problematic sequences vs. AUC
+### Problematic sequences vs. AUC
+# on test dataset
 mean_architecture_method_independent_auc <- detailed_stats_mean %>% 
-  group_by(seq_source) %>% 
+  group_by(method) %>% 
   summarise(mean_AUC = mean(mean_AUC))
 
 seqtype_all_results %>% 
@@ -352,3 +354,38 @@ seqtype_all_results %>%
   theme_bw() +
   facet_grid(seq_source~method, scales = "free_y") +
   ggtitle("Training dataset sampling method (top), testing dataset sampling method (right)")
+
+# on methods
+seqtype_all_results %>% 
+  filter(target == 0) %>% 
+  group_by(rep, ID, method) %>% 
+  summarise(mean_pred = mean(prediction)) %>% 
+  group_by(mean_pred, method) %>% 
+  summarise(n = length(mean_pred)) %>% 
+  ungroup() %>% 
+  left_join(mean_architecture_method_independent_auc) %>% 
+  ggplot(aes(x = mean_pred, y = n, fill = mean_AUC)) +
+  geom_col() +
+  scale_fill_gradientn(colors = c("#ffe96b", "#ff4242", "#630000"), values = rescale(c(0, 0.08, 0.14), to = c(0, 1))) +
+  theme_bw() +
+  facet_wrap(~seq_source, ncol = 2, scales = "free_y")
+
+mean_seqsource_independent_auc <- detailed_stats_mean %>% 
+  group_by(method) %>% 
+  summarise(mean_AUC = mean(mean_AUC))
+
+seqtype_all_results %>% 
+  filter(target == 0) %>% 
+  group_by(rep, ID, method) %>% 
+  summarise(mean_pred = mean(prediction)) %>% 
+  group_by(mean_pred, method) %>% 
+  summarise(n = length(mean_pred)) %>% 
+  ungroup() %>% 
+  filter(mean_pred <= 8/12) %>% 
+  group_by(method) %>% 
+  summarise(problematic_seqs = sum(n)) %>% 
+  left_join(mean_seqsource_independent_auc) %>% 
+  ggplot(aes(x = mean_AUC, y = problematic_seqs, color = method, label = method)) +
+  geom_point() +
+  geom_label_repel() +
+  theme_bw() 
