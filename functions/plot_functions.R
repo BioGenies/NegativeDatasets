@@ -352,7 +352,7 @@ get_pca_aa_comp_plot <- function(aa_comp_all, dataset_colors) {
     geom_point(aes(color = pca_data_all[["method"]], shape = pca_data_all[["method"]]), size = 3) +
     theme(plot.title = element_text(hjust = 0.5)) +
     scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
-    scale_shape_manual("Dataset", values = c(17, rep(16, 13)), labels = names(dataset_colors))
+    scale_shape_manual("Dataset", values = c(17, rep(16, 11)), labels = names(dataset_colors))
 }
 
 
@@ -381,7 +381,7 @@ get_pca_prop_plot <- function(df_all, dataset_colors) {
     theme_bw() +
     theme(plot.title = element_text(hjust = 0.5)) +
     scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
-    scale_shape_manual("Dataset", values = c(17, rep(16, 12)), labels = names(dataset_colors)) +
+    scale_shape_manual("Dataset", values = c(17, rep(16, 11)), labels = names(dataset_colors)) +
     xlim(c(-5.5, 6.2)) +
     ylim(c(-5.5, 4))
 }
@@ -414,7 +414,7 @@ plot_pca_res_ngrams <- function(pca_ngram_res, ngram_counts_sum_all, dataset_col
     geom_point(aes(color = ngram_counts_sum_all[["method"]], shape = ngram_counts_sum_all[["method"]]), size = 3) +
     theme_bw() +
     scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
-    scale_shape_manual("Dataset", values = c(17, rep(16, 12)), labels = names(dataset_colors)) 
+    scale_shape_manual("Dataset", values = c(17, rep(16, 11)), labels = names(dataset_colors)) 
 }
 
 plot_pca_res_ngrams_zoom <- function(pca_ngram_res, ngram_counts_sum_all, dataset_colors) {
@@ -422,7 +422,7 @@ plot_pca_res_ngrams_zoom <- function(pca_ngram_res, ngram_counts_sum_all, datase
     geom_point(aes(color = ngram_counts_sum_all[["method"]], shape = ngram_counts_sum_all[["method"]]), size = 3) +
     theme_bw() +
     scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
-    scale_shape_manual("Dataset", values = c(17, rep(16, 12)), labels = names(dataset_colors)) +
+    scale_shape_manual("Dataset", values = c(17, rep(16, 11)), labels = names(dataset_colors)) +
     xlim(c(-0.7, -0.25)) +
     ylim(c(-0.85, -0.35)) + 
     theme(legend.position = "none", 
@@ -448,7 +448,7 @@ get_sequence_length_plot <- function(df_all) {
   blank <- ggplot() + theme_void()
   
   p <- plot_grid(plotlist = list(plist[["Positive"]], plist[["AMAP"]], plist[["Gabere&Noble"]], plist[["CS-AMPPred"]], plist[["ampir-mature"]], 
-                                 blank, plist[["AmpGram"]], plist[["Wang et. al"]], plist[["dbAMP"]], plist[["ampir-precursor"]],
+                                 blank, plist[["AmpGram"]], plist[["Wang et. al"]], plist[["dbAMP"]], blank,
                                  blank, plist[["AMPlify"]], blank, plist[["iAMP-2L"]], blank,
                                  blank, plist[["AMPScannerV2"]], blank, blank, blank, blank, plist[["Witten&Witten"]]),
                  nrow = 5, ncol = 5, rel_widths = c(1, 2.5, 2.5, 2.5, 2.5)) 

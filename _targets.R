@@ -74,14 +74,14 @@ list(
   ),
   tar_target(
     methods,
-    c("AMAP", "AmpGram", "ampir-mature", "ampir-precursor", "AMPlify",
-      "AMPScannerV2", "CSAMPPred", "dbAMP", "GabereNoble", "iAMP2L", "Wang", "Witten")
+    c("AMAP", "AmpGram", "ampir-mature", "AMPlify", "AMPScannerV2", "CSAMPPred", 
+      "dbAMP", "GabereNoble", "iAMP2L", "Wang", "Witten")
   ),
   tar_target(
     dataset_colors,
     c(Positive = "#ff4242", AMAP = "#f2b176", AmpGram = "#f27676", `ampir-mature` = "#76bef2",
-      `ampir-precursor` = "#76eff2", AMPlify = "#f2d676", AMPScannerV2 = "#b976f2", `CS-AMPPred` = "#76f2be", 
-      dbAMP = "#f276e8", `Gabere&Noble` = "#7688f2", `iAMP-2L` = "#eff275", `Wang et. al` = "#80f276", `Witten&Witten` = "#ccf276")
+       AMPlify = "#f2d676", AMPScannerV2 = "#b976f2", `CS-AMPPred` = "#76f2be", dbAMP = "#f276e8", 
+      `Gabere&Noble` = "#7688f2", `iAMP-2L` = "#eff275", `Wang et. al` = "#80f276", `Witten&Witten` = "#ccf276")
   ),
   tar_target(
     aa_comp_peptides,

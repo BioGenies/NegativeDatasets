@@ -15,7 +15,7 @@ if(Sys.info()[["nodename"]] == "huawei")
 
 architectures <- list.files(results_path)
 
-methods <- c("iAMP2L", "dbAMP", "ampir-precursor", "ampir-mature", "CSAMPPred", 
+methods <- c("iAMP2L", "dbAMP", "ampir-mature", "CSAMPPred", 
              "Wang", "AmpGram", "Witten", "AMPScannerV2", "GabereNoble", "AMAP", "AMPlify")
 methods_seqnames <- c("iAMP-2L", "dbAMP", "ampir-precursor", "ampir-mature", "CS-AMPPred",
                       "Wang", "AmpGram", "Witten&Witten", "AMPScannerV2", "Gabere&Noble", "AMAP", "AMPlify")
@@ -85,13 +85,13 @@ group_by(proper_pred_df, target, mean_pred, method) %>%
 # Results on each method separately 
 seqtype_all_results <- all_results %>% 
   mutate(seq_source = sapply(all_results[["ID"]], function(i) gsub("method=", "", strsplit(i, "_")[[1]][3]))) %>% 
-  filter(seq_source != "AmPEP") %>% 
+  filter(!(seq_source %in% c("AmPEP", "ampir-precursor"))) %>% 
   mutate(seq_source = ifelse(seq_source == "Wang-et-al", "Wang et. al", seq_source))
 
 detailed_stats <- lapply(architectures, function(ith_architecture) {
   lapply(unique(seqtype_all_results[["method"]]), function(ith_method) {
     lapply(1:5, function(ith_rep) {
-      lapply(unique(seqtype_all_results[["seq_source"]])[2:13], function(ith_seq_source) {
+      lapply(unique(seqtype_all_results[["seq_source"]])[2:12], function(ith_seq_source) {
         dat <- filter(seqtype_all_results, architecture == ith_architecture, method == ith_method, 
                       seq_source %in% c(ith_seq_source, "AMP=1"), rep == ith_rep)
         data.frame(architecture = ith_architecture,
@@ -319,7 +319,7 @@ seqtype_all_results %>%
 ### Problematic sequences vs. AUC
 # on test dataset
 mean_architecture_method_independent_auc <- detailed_stats_mean %>% 
-  group_by(method) %>% 
+  group_by(seq_source) %>% 
   summarise(mean_AUC = mean(mean_AUC))
 
 seqtype_all_results %>% 
@@ -334,7 +334,7 @@ seqtype_all_results %>%
   geom_col() +
   scale_fill_gradientn(colors = c("#ffe96b", "#ff4242", "#630000"), values = rescale(c(0, 0.08, 0.14), to = c(0, 1))) +
   theme_bw() +
-  facet_wrap(~seq_source, ncol = 2, scales = "free_y")
+  facet_wrap(~seq_source, ncol = 3, scales = "free_y")
 
 mean_architecture_independent_auc <- detailed_stats_mean %>% 
   group_by(seq_source, method) %>% 
@@ -356,20 +356,6 @@ seqtype_all_results %>%
   ggtitle("Training dataset sampling method (top), testing dataset sampling method (right)")
 
 # on methods
-seqtype_all_results %>% 
-  filter(target == 0) %>% 
-  group_by(rep, ID, method) %>% 
-  summarise(mean_pred = mean(prediction)) %>% 
-  group_by(mean_pred, method) %>% 
-  summarise(n = length(mean_pred)) %>% 
-  ungroup() %>% 
-  left_join(mean_architecture_method_independent_auc) %>% 
-  ggplot(aes(x = mean_pred, y = n, fill = mean_AUC)) +
-  geom_col() +
-  scale_fill_gradientn(colors = c("#ffe96b", "#ff4242", "#630000"), values = rescale(c(0, 0.08, 0.14), to = c(0, 1))) +
-  theme_bw() +
-  facet_wrap(~seq_source, ncol = 2, scales = "free_y")
-
 mean_seqsource_independent_auc <- detailed_stats_mean %>% 
   group_by(method) %>% 
   summarise(mean_AUC = mean(mean_AUC))
@@ -381,11 +367,27 @@ seqtype_all_results %>%
   group_by(mean_pred, method) %>% 
   summarise(n = length(mean_pred)) %>% 
   ungroup() %>% 
-  filter(mean_pred <= 8/12) %>% 
+  left_join(mean_seqsource_independent_auc) %>% 
+  ggplot(aes(x = mean_pred, y = n, fill = mean_AUC)) +
+  geom_col() +
+  scale_fill_gradientn(colors = c("#ffe96b", "#ff4242", "#630000"), values = rescale(c(0, 0.08, 0.14), to = c(0, 1))) +
+  theme_bw() +
+  facet_wrap(~method, ncol = 3, scales = "free_y")
+
+# problematic sequences vs. AUC
+seqtype_all_results %>% 
+  filter(target == 0) %>% 
+  group_by(rep, ID, method) %>% 
+  summarise(mean_pred = mean(prediction)) %>% 
+  group_by(mean_pred, method) %>% 
+  summarise(n = length(mean_pred)) %>% 
+  ungroup() %>% 
+  filter(mean_pred <= 8/11) %>% 
   group_by(method) %>% 
   summarise(problematic_seqs = sum(n)) %>% 
   left_join(mean_seqsource_independent_auc) %>% 
   ggplot(aes(x = mean_AUC, y = problematic_seqs, color = method, label = method)) +
   geom_point() +
   geom_label_repel() +
-  theme_bw() 
+  theme_bw() +
+  ggtitle("Max 8 correct predictions")
