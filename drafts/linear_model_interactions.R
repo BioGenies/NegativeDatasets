@@ -1,6 +1,6 @@
 library(dplyr)
 
-detailed_stats <- readRDS("./detailed_stats.rds")
+detailed_stats <- readRDS("./drafts/detailed_stats.rds")
 
 models <- list("AUC ~ architecture",
                "AUC ~ method",
@@ -17,9 +17,13 @@ lm_res <- lapply(models, function(i) {
   n_signif <- data.frame(summ[["coefficients"]]) %>% 
     filter(grepl(":", rownames(.)) & `Pr...t..` < 0.05) %>% 
     nrow()
+  n_int <- data.frame(summ[["coefficients"]]) %>% 
+    filter(grepl(":", rownames(.))) %>% 
+    nrow()
   data.frame(
     model = i,
     adjusted_R_squared = summ[["adj.r.squared"]],
+    n_interactions = n_int,
     n_significant_interactions = n_signif
   )
 }) %>% bind_rows()
