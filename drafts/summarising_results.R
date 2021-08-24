@@ -275,8 +275,10 @@ test_res_length <- lapply(unique(detailed_stats_mean[["architecture"]]), functio
   }) %>% bind_rows()
 }) %>% bind_rows()
 
+ihs <- function(x) log(x + sqrt(x^2+1))
+
 inner_join(test_res_length, detailed_stats) %>% 
-  ggplot(aes(x = pval, y = AUC, color = architecture)) +
+  ggplot(aes(x = ihs(pval), y = AUC, color = architecture)) +
   geom_jitter(size = 3, alpha = 0.1) 
 
 inner_join(test_res_length, detailed_stats) %>% 
@@ -382,12 +384,13 @@ seqtype_all_results %>%
   group_by(mean_pred, method) %>% 
   summarise(n = length(mean_pred)) %>% 
   ungroup() %>% 
-  filter(mean_pred <= 8/11) %>% 
+ # filter(mean_pred <= 8/11) %>% 
   group_by(method) %>% 
-  summarise(problematic_seqs = sum(n)) %>% 
+  summarise(frac_problematic_seqs = sum(mean_pred <= 8/10)/n()) %>% 
   left_join(mean_seqsource_independent_auc) %>% 
-  ggplot(aes(x = mean_AUC, y = problematic_seqs, color = method, label = method)) +
+  ggplot(aes(x = mean_AUC, y = frac_problematic_seqs, color = method, label = method)) +
   geom_point() +
   geom_label_repel() +
   theme_bw() +
-  ggtitle("Max 8 correct predictions")
+  ylab("Fraction of problematic sequences") +
+  ggtitle("Sequence is problematic if predicted correctly by max 8 architectures")
