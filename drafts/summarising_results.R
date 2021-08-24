@@ -17,16 +17,16 @@ architectures <- list.files(results_path)
 
 methods <- c("iAMP2L", "dbAMP", "ampir-mature", "CSAMPPred", 
              "Wang", "AmpGram", "Witten", "AMPScannerV2", "GabereNoble", "AMAP", "AMPlify")
-methods_seqnames <- c("iAMP-2L", "dbAMP", "ampir-precursor", "ampir-mature", "CS-AMPPred",
+methods_seqnames <- c("iAMP-2L", "dbAMP", "ampir-mature", "CS-AMPPred",
                       "Wang", "AmpGram", "Witten&Witten", "AMPScannerV2", "Gabere&Noble", "AMAP", "AMPlify")
 
 change_method_names <- function(df) {
   mutate(df, method = case_when(method == "iAMP2L" ~ "iAMP-2L",
                                 method == "CSAMPPred" ~ "CS-AMPPred",
-                                method == "Wang" ~ "Wang et. al",
+                                method == "Wang" ~ "Wang et al.",
                                 method == "Witten" ~ "Witten&Witten",
                                 method == "GabereNoble" ~ "Gabere&Noble",
-                                method %in% c("dbAMP", "ampir-precursor", "ampir-mature", "AmpGram", "AMAP", "AMPlify", "AMPScannerV2") ~ method))
+                                method %in% c("dbAMP", "ampir-precursor", "ampir-mature", "AmpGram", "AMAP", "AMPlify", "AMPScannerV2", "Positive") ~ method))
 }
 
 # Results on whole benchmark datasets
@@ -394,3 +394,134 @@ seqtype_all_results %>%
   theme_bw() +
   ylab("Fraction of problematic sequences") +
   ggtitle("Sequence is problematic if predicted correctly by max 8 architectures")
+
+
+### AUC vs. differences in amino acid composition
+
+targets::tar_load(aa_comp_all)
+data_path <- "/media/kasia/Data/Dropbox/Projekty/BioNgramProjects/NegativeDatasets/Datasets/"
+aa_comp_traintest <- lapply(1:5, function(j) {
+  ds <- read_fasta(paste0(data_path, "Benchmark_rep", j, ".fasta"))
+  pos <- unlist(ds[which(grepl("AMP=1", names(ds)))], use.names = FALSE)
+  neg_df <- lapply(1:length(methods_seqnames), function(ith_method) {
+    aa <- unlist(ds[which(grepl(methods_seqnames[ith_method], names(ds), fixed = TRUE))], use.names = FALSE)
+    as.data.frame(table(aa)/length(aa)) %>% 
+      mutate(method = ifelse(methods_seqnames[ith_method] == "Wang", "Wang et al.", methods_seqnames[ith_method]))
+  }) %>% bind_rows() %>% 
+    mutate(rep = as.character(j),
+           Dataset = "Negative")
+  pos_df <- mutate(setNames(as.data.frame(table(pos)/length(pos)), c("aa", "Freq")),
+                        method = "Positive", rep = as.character(j), Dataset = "Positive")
+  bind_rows(neg_df, pos_df)
+}) %>% bind_rows() %>% 
+  mutate(Type = "Testing") %>% 
+  bind_rows(change_method_names(mutate(filter(aa_comp_all, !(method %in% c("AmPEP", "ampir-precursor"))), Type = "Training")))
+
+# Negative train vs positive train
+dat <- filter(aa_comp_traintest, Type == "Training" & Dataset == "Negative")
+neg_pos_diffs <- lapply(1:5, function(ith_rep) {
+    lapply(unique(dat[["method"]]), function(ith_method) {
+      lapply(unique(dat[["aa"]]), function(ith_aa) {
+        neg <- filter(dat, method == ith_method, rep == ith_rep, aa == ith_aa)[["Freq"]]
+        pos <- filter(aa_comp_traintest, Type == "Training", Dataset == "Positive", aa == ith_aa)[["Freq"]]
+        n <- ifelse(length(neg) == 0, 0, neg)
+        p <- ifelse(length(pos) == 0, 0, pos)
+        data.frame(method = ith_method,
+                   aa = ith_aa,
+                   rep = ith_rep,
+                   diff = abs(n-p),
+                   norm_diff = abs(n-p)/p,
+                   square_diff = (n-p)^2,
+                   norm_square_diff = ((n-p)^2)/p)
+      }) %>% bind_rows()
+    }) %>% bind_rows()
+  }) %>% bind_rows()
+
+# adding mean AUC for a given method, replication and architecture (mean AUC from results for different test datasets)
+neg_pos_diffs_plot_dat <- detailed_stats %>% 
+  group_by(method, rep, architecture) %>% 
+  summarise(mean_AUC = mean(AUC)) %>% 
+  left_join(neg_pos_diffs, by = c("method", "rep"))
+
+# Differences for each amino acid vs. mean AUC 
+ggplot(neg_pos_diffs_plot_dat, aes(x = diff, y = mean_AUC, color = method)) +
+         geom_point() +
+         facet_wrap(~aa) +
+  scale_color_brewer(palette = "Paired")
+
+# Aggregated differences vs. AUC
+neg_pos_diffs %>% 
+  group_by(method, rep) %>% 
+  summarise(sum_diff = sum(diff)) %>% 
+  left_join(., summarise(
+    group_by(detailed_stats, method, rep, architecture),
+    mean_AUC = mean(AUC))) %>% 
+  ggplot(aes(x = sum_diff, y = mean_AUC, color = method)) +
+  geom_point() +
+  scale_color_brewer(palette = "Paired")
+
+# Distance 
+neg_pos_diffs %>% 
+  group_by(method, rep) %>% 
+  summarise(distance = sqrt(sum(square_diff))) %>% 
+  left_join(., summarise(
+    group_by(detailed_stats, method, rep, architecture),
+    mean_AUC = mean(AUC))) %>% 
+  ggplot(aes(x = distance, y = mean_AUC, color = method)) +
+  geom_point() +
+  scale_color_brewer(palette = "Paired")
+
+# Negative test vs negative train
+test_train_diffs <- lapply(1:5, function(ith_rep) {
+  lapply(unique(aa_comp_traintest[["method"]])[1:11], function(ith_method) {
+    lapply(unique(dat[["aa"]]), function(ith_aa) {
+      train <- filter(aa_comp_traintest, method == ith_method, rep == ith_rep, aa == ith_aa, Type == "Training")[["Freq"]]
+      test <- filter(aa_comp_traintest, method == ith_method, rep == ith_rep, aa == ith_aa, Type == "Testing")[["Freq"]]
+      tr <- ifelse(length(train) == 0, 0, train)
+      te <- ifelse(length(test) == 0, 0, test)
+      data.frame(method = ith_method,
+                 aa = ith_aa,
+                 rep = ith_rep,
+                 diff = abs(te-tr),
+                 norm_diff = abs(te-tr)/tr,
+                 square_diff = (te-tr)^2,
+                 norm_square_diff = ((te-tr)^2)/tr)
+    }) %>% bind_rows()
+  }) %>% bind_rows()
+}) %>% bind_rows()
+
+test_train_diffs_plot_dat <- detailed_stats %>% 
+  group_by(method, rep, architecture) %>% 
+  summarise(mean_AUC = mean(AUC)) %>% 
+  left_join(test_train_diffs, by = c("method", "rep"))
+
+# Differences for each amino acid
+ggplot(test_train_diffs_plot_dat, aes(x = diff, y = mean_AUC, color = method)) +
+  geom_point() +
+  facet_wrap(~aa) +
+  scale_color_brewer(palette = "Paired")
+
+# Aggregated differences
+test_train_diffs %>% 
+  mutate(norm_diff = ifelse(is.na(norm_diff), 0, norm_diff)) %>% 
+  group_by(method, rep) %>% 
+  summarise(sum_norm_diff = sum(norm_diff)) %>% 
+  mutate(sum_diff = ifelse(is.na(sum_norm_diff), 0, sum_norm_diff)) %>% 
+  left_join(., summarise(
+    group_by(detailed_stats, method, rep, architecture),
+    mean_AUC = mean(AUC))) %>% 
+  ggplot(aes(x = sum_norm_diff, y = mean_AUC, color = method)) +
+  geom_point() +
+  scale_color_brewer(palette = "Paired")
+
+# Distance
+test_train_diffs %>% 
+  mutate(norm_square_diff = ifelse(is.na(norm_square_diff), 0, norm_square_diff)) %>% 
+  group_by(method, rep) %>% 
+  summarise(norm_distance = sqrt(sum(norm_square_diff))) %>% 
+  left_join(., summarise(
+    group_by(detailed_stats, method, rep, architecture),
+    mean_AUC = mean(AUC))) %>% 
+  ggplot(aes(x = norm_distance, y = mean_AUC, color = method)) +
+  geom_point() +
+  scale_color_brewer(palette = "Paired")
