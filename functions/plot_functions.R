@@ -528,7 +528,7 @@ get_results_plot_mean_auc_sd <- function(detailed_stats_mean) {
   ggplot(detailed_stats_mean, aes(x = method, y = seq_source, fill = mean_AUC)) +
     geom_tile() +
     geom_point(data = detailed_stats_mean, aes(x = method, y = seq_source, size = sd)) +
-    facet_wrap(~architecture, ncol = 3) +
+    facet_wrap(~architecture, ncol = 4) +
     scale_fill_gradient("Mean AUC", low =  "#ffe96b",  high = "#ff4242",
                         trans = scales::trans_new("square_exp", function(x) exp(x)^2, function(x) log(sqrt(x)))) +
     scale_size_continuous("Standard deviation") +
