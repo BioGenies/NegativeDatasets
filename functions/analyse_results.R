@@ -52,8 +52,8 @@ get_detailed_stats <- function(seqtype_all_results, architectures) {
 
 get_detailed_stats_mean <- function(detailed_stats) {
   detailed_stats %>% 
-    group_by(architecture, method, seq_source) %>% 
-    summarise(mean_AUC = mean(AUC),
-              sd = sd(AUC)) %>% 
+    dplyr::group_by(architecture, method, seq_source) %>% 
+    dplyr::summarise(mean_AUC = mean(AUC),
+                     sd = sd(AUC)) %>% 
     ungroup()
 }
