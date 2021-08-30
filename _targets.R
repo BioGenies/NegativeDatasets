@@ -249,7 +249,7 @@ list(
     ggsave(filename = "results_mean_AUC+SD.eps",
            get_results_plot_mean_auc_sd(detailed_stats_mean),
            path = paste0(data_path, "Publication_results/"),
-           width = 9, height = 10)
+           width = 10, height = 9)
   )
 )
 
