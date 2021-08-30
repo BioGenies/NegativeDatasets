@@ -9,9 +9,11 @@ library(scales)
 
 results_path <- "/media/kasia/Data/Dropbox/Projekty/BioNgramProjects/NegativeDatasets/Results/"
 
-
 if(Sys.info()[["nodename"]] == "huawei")
   results_path <- "/home/michal/Dropbox/BioNgramProjects/NegativeDatasets/Results/"
+
+source("functions/plot_functions.R")
+source("functions/analyse_results.R")
 
 architectures <- list.files(results_path)
 
@@ -30,28 +32,10 @@ change_method_names <- function(df) {
 }
 
 # Results on whole benchmark datasets
-all_results <- pblapply(architectures, function(ith_architecture) {
-  lapply(methods, function(ith_method) {
-    lapply(1:5, function(ith_rep) {
-      res <- try(data.table::fread(file = paste0(results_path, ith_architecture, "/training_method_", ith_method, "_rep", ith_rep, ".csv"), data.table = FALSE) %>% 
-                   mutate(rep = ith_rep,
-                          method = ith_method,
-                          architecture = ith_architecture), silent = TRUE)
-      
-      if(inherits(res, "try-error"))
-        res <- data.frame(ID = c(), target = c(), prediction = c(), probability = c(), rep = c(), method = c(), 
-                          architecture = c())
-      
-      res %>% 
-        mutate(target = ifelse(grepl("AMP=1", ID), 1, 0))
-    }) %>% 
-      bind_rows()
-  }) %>% 
-    bind_rows()
-})%>% 
-  bind_rows() %>% 
-  change_method_names()
-
+all_results <- aggregate_all_results(results_path, 
+                                     c("AMAP", "AmPEP", "AmPEPpy", "Ampir", "AMPScannerV2", "CS-AMPPred", 
+                                       "Deep-AmPEP30", "iAMP-2L", "AmpGram", "MACREL", "MLAMP", "SVM-LZ"), 
+                                     methods)
 
 part_dat <- filter(all_results, rep == 1) 
 
@@ -83,41 +67,16 @@ group_by(proper_pred_df, target, mean_pred, method) %>%
 
 
 # Results on each method separately 
-seqtype_all_results <- all_results %>% 
-  mutate(seq_source = sapply(all_results[["ID"]], function(i) gsub("method=", "", strsplit(i, "_")[[1]][3]))) %>% 
-  filter(!(seq_source %in% c("AmPEP", "ampir-precursor"))) %>% 
-  mutate(seq_source = ifelse(seq_source == "Wang-et-al", "Wang et. al", seq_source))
+seqtype_all_results <- get_seq_source(all_results)
 
-detailed_stats <- lapply(architectures, function(ith_architecture) {
-  lapply(unique(seqtype_all_results[["method"]]), function(ith_method) {
-    lapply(1:5, function(ith_rep) {
-      lapply(unique(seqtype_all_results[["seq_source"]])[2:12], function(ith_seq_source) {
-        dat <- filter(seqtype_all_results, architecture == ith_architecture, method == ith_method, 
-                      seq_source %in% c(ith_seq_source, "AMP=1"), rep == ith_rep)
-        data.frame(architecture = ith_architecture,
-                   method = ith_method,
-                   rep = ith_rep,
-                   seq_source = ith_seq_source,
-                   AUC = ifelse(all(is.na(dat[["probability"]])),
-                                HMeasure(dat[["target"]], dat[["prediction"]])[["metrics"]][["AUC"]],
-                                HMeasure(dat[["target"]], dat[["probability"]])[["metrics"]][["AUC"]]),
-                   probs = ifelse(all(is.na(dat[["probability"]])), TRUE, FALSE))
-      }) %>% bind_rows()
-    }) %>% bind_rows()
-  }) %>% bind_rows()
-}) %>% bind_rows()
-
+#detailed_stats <- get_detailed_stats(seqtype_all_results, architectures)
 
 detailed_stats <- readRDS("./drafts/detailed_stats.rds") %>%
   mutate(method = factor(method, levels = sort(unique(method))),
          seq_source = factor(seq_source, levels = sort(unique(seq_source)), labels = levels(method)))
 
 
-detailed_stats_mean <- detailed_stats %>% 
-  group_by(architecture, method, seq_source) %>% 
-  summarise(mean_AUC = mean(AUC),
-            sd = sd(AUC)) %>% 
-  ungroup()
+detailed_stats_mean <- get_detailed_stats_mean(detailed_stats)
 
 pdf("./drafts/architecture-benchmark.pdf", height = 10, width = 9)
 ggplot(detailed_stats_mean, aes(x = method, y = seq_source, fill = mean_AUC)) +
@@ -125,7 +84,7 @@ ggplot(detailed_stats_mean, aes(x = method, y = seq_source, fill = mean_AUC)) +
   geom_point(data = detailed_stats_mean, aes(x = method, y = seq_source, size = sd)) +
   facet_wrap(~architecture, ncol = 3) +
   scale_fill_gradient("Mean AUC", low =  "#ffe96b",  high = "#ff4242",
-                       trans = scales::trans_new("square_exp", function(x) exp(x)^2, function(x) log(sqrt(x)))) +
+                      trans = scales::trans_new("square_exp", function(x) exp(x)^2, function(x) log(sqrt(x)))) +
   scale_size_continuous("Standard deviation") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90), legend.position = "bottom") +
@@ -202,13 +161,13 @@ group_by(detailed_stats, architecture, method, seq_source) %>%
 dev.off()
 
 p <- inner_join(reference_auc_df %>% 
-             group_by(architecture) %>% 
-             summarise(reference_mean_AUC = mean(reference_AUC)),
-           detailed_stats_mean %>%
-             filter(method != seq_source) %>% 
-             select(architecture, seq_source, nonreference_AUC = mean_AUC) %>% 
-             group_by(architecture) %>% 
-             summarise(nonreference_mean_AUC = mean(nonreference_AUC))) %>% 
+                  group_by(architecture) %>% 
+                  summarise(reference_mean_AUC = mean(reference_AUC)),
+                detailed_stats_mean %>%
+                  filter(method != seq_source) %>% 
+                  select(architecture, seq_source, nonreference_AUC = mean_AUC) %>% 
+                  group_by(architecture) %>% 
+                  summarise(nonreference_mean_AUC = mean(nonreference_AUC))) %>% 
   ggplot(aes(x = reference_mean_AUC, y = nonreference_mean_AUC,
              color = architecture, label = architecture)) +
   geom_point() +
@@ -242,7 +201,7 @@ inner_join(reference_auc_df %>%
   theme_bw() +
   xlim(c(0.5, 1)) +
   ylim(c(0.5, 1))
-  
+
 
 
 group_by(detailed_stats, architecture, seq_source) %>% 
@@ -384,7 +343,7 @@ seqtype_all_results %>%
   group_by(mean_pred, method) %>% 
   summarise(n = length(mean_pred)) %>% 
   ungroup() %>% 
- # filter(mean_pred <= 8/11) %>% 
+  # filter(mean_pred <= 8/11) %>% 
   group_by(method) %>% 
   summarise(frac_problematic_seqs = sum(mean_pred <= 8/10)/n()) %>% 
   left_join(mean_seqsource_independent_auc) %>% 
@@ -411,7 +370,7 @@ aa_comp_traintest <- lapply(1:5, function(j) {
     mutate(rep = as.character(j),
            Dataset = "Negative")
   pos_df <- mutate(setNames(as.data.frame(table(pos)/length(pos)), c("aa", "Freq")),
-                        method = "Positive", rep = as.character(j), Dataset = "Positive")
+                   method = "Positive", rep = as.character(j), Dataset = "Positive")
   bind_rows(neg_df, pos_df)
 }) %>% bind_rows() %>% 
   mutate(Type = "Testing") %>% 
@@ -420,22 +379,22 @@ aa_comp_traintest <- lapply(1:5, function(j) {
 # Negative train vs positive train
 dat <- filter(aa_comp_traintest, Type == "Training" & Dataset == "Negative")
 neg_pos_diffs <- lapply(1:5, function(ith_rep) {
-    lapply(unique(dat[["method"]]), function(ith_method) {
-      lapply(unique(dat[["aa"]]), function(ith_aa) {
-        neg <- filter(dat, method == ith_method, rep == ith_rep, aa == ith_aa)[["Freq"]]
-        pos <- filter(aa_comp_traintest, Type == "Training", Dataset == "Positive", aa == ith_aa)[["Freq"]]
-        n <- ifelse(length(neg) == 0, 0, neg)
-        p <- ifelse(length(pos) == 0, 0, pos)
-        data.frame(method = ith_method,
-                   aa = ith_aa,
-                   rep = ith_rep,
-                   diff = abs(n-p),
-                   norm_diff = abs(n-p)/p,
-                   square_diff = (n-p)^2,
-                   norm_square_diff = ((n-p)^2)/p)
-      }) %>% bind_rows()
+  lapply(unique(dat[["method"]]), function(ith_method) {
+    lapply(unique(dat[["aa"]]), function(ith_aa) {
+      neg <- filter(dat, method == ith_method, rep == ith_rep, aa == ith_aa)[["Freq"]]
+      pos <- filter(aa_comp_traintest, Type == "Training", Dataset == "Positive", aa == ith_aa)[["Freq"]]
+      n <- ifelse(length(neg) == 0, 0, neg)
+      p <- ifelse(length(pos) == 0, 0, pos)
+      data.frame(method = ith_method,
+                 aa = ith_aa,
+                 rep = ith_rep,
+                 diff = abs(n-p),
+                 norm_diff = abs(n-p)/p,
+                 square_diff = (n-p)^2,
+                 norm_square_diff = ((n-p)^2)/p)
     }) %>% bind_rows()
   }) %>% bind_rows()
+}) %>% bind_rows()
 
 # adding mean AUC for a given method, replication and architecture (mean AUC from results for different test datasets)
 neg_pos_diffs_plot_dat <- detailed_stats %>% 
@@ -445,8 +404,8 @@ neg_pos_diffs_plot_dat <- detailed_stats %>%
 
 # Differences for each amino acid vs. mean AUC 
 ggplot(neg_pos_diffs_plot_dat, aes(x = diff, y = mean_AUC, color = method)) +
-         geom_point() +
-         facet_wrap(~aa) +
+  geom_point() +
+  facet_wrap(~aa) +
   scale_color_brewer(palette = "Paired")
 
 # Aggregated differences vs. AUC
