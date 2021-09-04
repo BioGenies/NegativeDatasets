@@ -11,6 +11,9 @@ library(ggbiplot)
 library(cowplot)
 library(xtable)
 library(seqR)
+library(scales)
+library(mlr3measures)
+library(hmeasure)
 
 
 if(Sys.info()[["nodename"]] == "kasia-MACH-WX9") {
@@ -29,6 +32,7 @@ source("functions/generate_negative_datasets.R")
 source("functions/generate_all_traintest_datasets.R")
 source("functions/get_putative_amps.R")
 source("functions/plot_functions.R")
+source("functions/analyse_results.R")
 
 
 list(
@@ -80,8 +84,8 @@ list(
   tar_target(
     dataset_colors,
     c(Positive = "#ff4242", AMAP = "#f2b176", AmpGram = "#f27676", `ampir-mature` = "#76bef2",
-       AMPlify = "#f2d676", AMPScannerV2 = "#b976f2", `CS-AMPPred` = "#76f2be", dbAMP = "#f276e8", 
-      `Gabere&Noble` = "#7688f2", `iAMP-2L` = "#eff275", `Wang et. al` = "#80f276", `Witten&Witten` = "#ccf276")
+      AMPlify = "#f2d676", AMPScannerV2 = "#b976f2", `CS-AMPPred` = "#76f2be", dbAMP = "#f276e8", 
+      `Gabere&Noble` = "#7688f2", `iAMP-2L` = "#eff275", `Wang et al.` = "#80f276", `Witten&Witten` = "#ccf276")
   ),
   tar_target(
     aa_comp_peptides,
@@ -214,8 +218,38 @@ list(
   tar_target(
     aa_comp_methods_test_plot,
     ggsave(filename = "aa_comp_test_methods.eps",
-          get_statistical_analysis_plot_aa_comp_methods(aa_comp_peptides_all),
-          path = paste0(data_path, "Publication_results/"),
-          width = 10, height = 9))
+           get_statistical_analysis_plot_aa_comp_methods(aa_comp_peptides_all),
+           path = paste0(data_path, "Publication_results/"),
+           width = 10, height = 9)),
+  tar_target(
+    architectures,
+    c("AMAP", "AmPEP", "AmPEPpy", "Ampir", "AMPScannerV2", "CS-AMPPred", 
+      "Deep-AmPEP30", "iAMP-2L", "AmpGram", "MACREL", "MLAMP", "SVM-LZ")
+  ),
+  tar_target(
+    all_results,
+    aggregate_all_results(results_path = paste0(data_path, "Results/"),
+                          methods = methods,
+                          architectures = architectures)
+  ),
+  tar_target(
+    seqtype_all_results,
+    get_seq_source(all_results)
+  ),
+  tar_target(
+    detailed_stats,
+    get_detailed_stats(seqtype_all_results, architectures)
+  ),
+  tar_target(
+    detailed_stats_mean,
+    get_detailed_stats_mean(detailed_stats)
+  ),
+  tar_target(
+    mean_auc_sd_plot,
+    ggsave(filename = "results_mean_AUC+SD.eps",
+           get_results_plot_mean_auc_sd(detailed_stats_mean),
+           path = paste0(data_path, "Publication_results/"),
+           width = 10, height = 9)
+  )
 )
 

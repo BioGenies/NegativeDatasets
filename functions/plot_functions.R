@@ -19,7 +19,7 @@ get_prop_df <- function(methods, n_rep, data_path) {
 change_method_names <- function(df) {
   mutate(df, method = case_when(method == "iAMP2L" ~ "iAMP-2L",
                                 method == "CSAMPPred" ~ "CS-AMPPred",
-                                method == "Wang" ~ "Wang et. al",
+                                method == "Wang" ~ "Wang et al.",
                                 method == "Witten" ~ "Witten&Witten",
                                 method == "GabereNoble" ~ "Gabere&Noble",
                                 method %in% c("dbAMP", "ampir-precursor", "ampir-mature", "AmpGram", "AMAP", 
@@ -448,7 +448,7 @@ get_sequence_length_plot <- function(df_all) {
   blank <- ggplot() + theme_void()
   
   p <- plot_grid(plotlist = list(plist[["Positive"]], plist[["AMAP"]], plist[["Gabere&Noble"]], plist[["CS-AMPPred"]], plist[["ampir-mature"]], 
-                                 blank, plist[["AmpGram"]], plist[["Wang et. al"]], plist[["dbAMP"]], blank,
+                                 blank, plist[["AmpGram"]], plist[["Wang et al."]], plist[["dbAMP"]], blank,
                                  blank, plist[["AMPlify"]], blank, plist[["iAMP-2L"]], blank,
                                  blank, plist[["AMPScannerV2"]], blank, blank, blank, blank, plist[["Witten&Witten"]]),
                  nrow = 5, ncol = 5, rel_widths = c(1, 2.5, 2.5, 2.5, 2.5)) 
@@ -522,4 +522,18 @@ get_statistical_analysis_plot_aa_comp_methods <- function(aa_comp_peptides_all) 
     theme(panel.grid.major = element_blank(),
           axis.text.x = element_text(angle = 90)) +
     scale_fill_manual("Is significant", values = c(`FALSE` = "#76bef2", `TRUE` = "#ff4242"))
+}
+
+get_results_plot_mean_auc_sd <- function(detailed_stats_mean) {
+  ggplot(detailed_stats_mean, aes(x = method, y = seq_source, fill = mean_AUC)) +
+    geom_tile() +
+    geom_point(data = detailed_stats_mean, aes(x = method, y = seq_source, size = sd)) +
+    facet_wrap(~architecture, ncol = 4) +
+    scale_fill_gradient("Mean AUC", low =  "#ffe96b",  high = "#ff4242",
+                        trans = scales::trans_new("square_exp", function(x) exp(x)^2, function(x) log(sqrt(x)))) +
+    scale_size_continuous("Standard deviation") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90), legend.position = "bottom") +
+    xlab("Sampling method used for generation of training negative dataset") +
+    ylab("Sampling method used for generation of test negative dataset")
 }
