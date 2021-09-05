@@ -43,7 +43,7 @@ pub_plot <- data.frame(year = year) %>%
   scale_x_discrete("Year") +
   scale_y_continuous("Value") +
   facet_wrap(~ name, nrow = 3) +
-  theme_bw(base_size = 16)
+  theme_bw(base_size = 18)
 
 png(filename = "./reports/pub-plot.png", width = 500, height = 700)
 pub_plot
