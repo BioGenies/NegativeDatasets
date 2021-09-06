@@ -14,6 +14,7 @@ library(seqR)
 library(scales)
 library(mlr3measures)
 library(hmeasure)
+library(ggrepel)
 
 
 if(Sys.info()[["nodename"]] == "kasia-MACH-WX9") {
@@ -250,6 +251,20 @@ list(
            get_results_plot_mean_auc_sd(detailed_stats_mean),
            path = paste0(data_path, "Publication_results/"),
            width = 10, height = 9)
+  ),
+  tar_target(
+    ref_vs_nonref_plot,
+    ggsave(filename = "reference_vs_nonreference.eps",
+           plot_reference_vs_nonreference(detailed_stats_mean),
+           path = paste0(data_path, "Publication_results/"),
+           width = 8, height = 8)
+  ),
+  tar_target(
+    ref_vs_nonref_by_train_method_plot,
+    ggsave(filename = "reference_vs_nonreference_by_train_method.eps",
+           plot_reference_vs_nonreference_by_train_method(detailed_stats_mean),
+           path = paste0(data_path, "Publication_results/"),
+           width = 24, height = 22)
   )
 )
 

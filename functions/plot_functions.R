@@ -169,9 +169,9 @@ my_ggbiplot <- function(pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE,
     }
   } else {
     if(!is.null(df.u$groups)) {
-     # g <- g + geom_point(aes(color = groups), alpha = alpha)
+      # g <- g + geom_point(aes(color = groups), alpha = alpha)
     } else {
-    #  g <- g + geom_point(alpha = alpha)      
+      #  g <- g + geom_point(alpha = alpha)      
     }
   }
   
@@ -536,4 +536,55 @@ get_results_plot_mean_auc_sd <- function(detailed_stats_mean) {
     theme(axis.text.x = element_text(angle = 90), legend.position = "bottom") +
     xlab("Sampling method used for generation of training negative dataset") +
     ylab("Sampling method used for generation of test negative dataset")
+}
+
+get_reference_auc_df <- function(detailed_stats_mean) {
+  detailed_stats_mean %>%
+    dplyr::filter(method == seq_source) %>% 
+    select(architecture, seq_source, reference_AUC = mean_AUC)
+}
+
+plot_reference_vs_nonreference <- function(detailed_stats_mean) {
+  reference_auc_df <- get_reference_auc_df(detailed_stats_mean)
+  
+  p <- inner_join(reference_auc_df %>% 
+               dplyr::group_by(architecture) %>% 
+               dplyr::summarise(reference_mean_AUC = mean(reference_AUC)),
+             detailed_stats_mean %>%
+               filter(method != seq_source) %>% 
+               select(architecture, seq_source, nonreference_AUC = mean_AUC) %>% 
+               dplyr::group_by(architecture) %>% 
+               dplyr::summarise(nonreference_mean_AUC = mean(nonreference_AUC))) %>% 
+    ggplot(aes(x = reference_mean_AUC, y = nonreference_mean_AUC,
+               color = architecture, label = architecture)) +
+    geom_point() +
+    geom_abline(slope = 1, intercept = 0) +
+    geom_label_repel() +
+    coord_equal() +
+    theme_bw() +
+    xlim(c(0.5, 1)) +
+    ylim(c(0.5, 1))
+}
+
+plot_reference_vs_nonreference_by_train_method <- function(detailed_stats_mean) {
+  reference_auc_df <- get_reference_auc_df(detailed_stats_mean)
+  
+  inner_join(reference_auc_df %>% 
+               dplyr::group_by(architecture) %>% 
+               dplyr::summarise(reference_mean_AUC = mean(reference_AUC)),
+             detailed_stats_mean %>%
+               filter(method != seq_source) %>% 
+               select(architecture, method, seq_source, nonreference_AUC = mean_AUC) %>% 
+               dplyr::group_by(architecture, method) %>% 
+               dplyr::summarise(nonreference_mean_AUC = mean(nonreference_AUC))) %>% 
+    ggplot(aes(x = reference_mean_AUC, y = nonreference_mean_AUC,
+               color = architecture, label = architecture)) +
+    geom_point() +
+    facet_wrap(~method) +
+    geom_abline(slope = 1, intercept = 0) +
+    geom_label_repel() +
+    coord_equal() +
+    theme_bw() +
+    xlim(c(0.5, 1)) +
+    ylim(c(0.5, 1))
 }
