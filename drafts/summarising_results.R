@@ -76,18 +76,22 @@ detailed_stats <- readRDS("./drafts/detailed_stats.rds") %>%
          seq_source = factor(seq_source, levels = sort(unique(seq_source)), labels = levels(method)))
 
 
-detailed_stats_mean <- get_detailed_stats_mean(detailed_stats)
+detailed_stats_mean <- get_detailed_stats_mean(detailed_stats) %>% 
+  mutate(ident = seq_source == method)
 
-pdf("./drafts/architecture-benchmark.pdf", height = 10, width = 9)
-ggplot(detailed_stats_mean, aes(x = method, y = seq_source, fill = mean_AUC)) +
-  geom_tile() +
-  geom_point(data = detailed_stats_mean, aes(x = method, y = seq_source, size = sd)) +
-  facet_wrap(~architecture, ncol = 3) +
+png("./drafts/architecture-benchmark.png", height = 700, width = 1500)
+ggplot(detailed_stats_mean, aes(x = method, y = seq_source, fill = mean_AUC, color = ident)) +
+  geom_tile(size = 1) +
+  geom_point(data = detailed_stats_mean, aes(x = method, y = seq_source, size = sd),
+             color = "black") +
+  facet_wrap(~architecture, nrow = 2) +
   scale_fill_gradient("Mean AUC", low =  "#ffe96b",  high = "#ff4242",
                       trans = scales::trans_new("square_exp", function(x) exp(x)^2, function(x) log(sqrt(x)))) +
   scale_size_continuous("Standard deviation") +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90), legend.position = "bottom") +
+  scale_color_manual(values = c(NA, "black"), guide = FALSE) +
+  theme_bw(base_size = 16) +
+  theme(axis.text.x = element_text(angle = 90), legend.position = "bottom",
+        legend.key.width = unit(2, "cm")) +
   xlab("Sampling method used for generation of training negative dataset") +
   ylab("Sampling method used for generation of test negative dataset")
 dev.off()
@@ -170,15 +174,18 @@ p <- inner_join(reference_auc_df %>%
                   summarise(nonreference_mean_AUC = mean(nonreference_AUC))) %>% 
   ggplot(aes(x = reference_mean_AUC, y = nonreference_mean_AUC,
              color = architecture, label = architecture)) +
-  geom_point() +
+  geom_point(size = 5) +
   geom_abline(slope = 1, intercept = 0) +
-  geom_label_repel() +
+  geom_label_repel(size = 7) +
+  scale_x_continuous("Mean AUC if trained and tested using\ndata sampled with the same method", 
+                     limits = c(0.5, 1)) +
+  scale_y_continuous("Mean AUC if trained and tested using\ndata sampled with different methods", 
+                     limits = c(0.5, 1)) +
+  scale_color_discrete("Architecture") +
   coord_equal() +
-  theme_bw() +
-  xlim(c(0.5, 1)) +
-  ylim(c(0.5, 1))
+  theme_bw(base_size = 16) 
 
-png("./drafts/reference_vs_nonreference.png", width = 800, height = 800)
+png("./drafts/reference_vs_nonreference.png", width = 1000, height = 800)
 p
 dev.off()
 

@@ -1,6 +1,7 @@
 library(dplyr)
 library(pbapply)
 library(broom)
+library(WRS2)
 
 detailed_stats <- readRDS("./drafts/detailed_stats.rds")
 
@@ -29,21 +30,4 @@ lm_res <- lapply(models, function(i) {
     n_significant_interactions = n_signif
   )
 }) %>% bind_rows()
-
-big_model <- lm(AUC ~ architecture*method*seq_source, data = detailed_stats)
-
-smaller_model <- update(big_model, . ~ . -`architectureMLAMP:methodGabere&Noble:seq_sourceGabere&Noble`)
-
-
-all_terms <- names(coef(big_model))
-
-only_interactions <- all_terms[grepl(pattern = ":", all_terms, fixed = TRUE)]
-
-all_interactions_list <- pblapply(only_interactions, function(ith_interaction) {
-  interaction_term <- paste0(". ~ . -`", ith_interaction, "`")
-  smaller_model <- update(big_model, interaction_term)
-  test_res <- anova(big_model, smaller_model)
-  tidy(test_res) %>% 
-    mutate(term = ith_interaction)
-})
 
