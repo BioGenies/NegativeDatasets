@@ -1,4 +1,3 @@
-library(dplyr)
 library(biogram)
 library(pbapply)
 library(targets)
@@ -15,6 +14,8 @@ library(scales)
 library(mlr3measures)
 library(hmeasure)
 library(ggrepel)
+library(dplyr)
+library(patchwork)
 
 
 if(Sys.info()[["nodename"]] == "kasia-MACH-WX9") {
@@ -253,11 +254,11 @@ list(
            width = 10, height = 9)
   ),
   tar_target(
-    ref_vs_nonref_plot,
-    ggsave(filename = "reference_vs_nonreference.eps",
-           plot_reference_vs_nonreference(detailed_stats_mean),
+    ref_vs_nonref_and_effects_plot,
+    ggsave(filename = "reference_vs_nonreference+effects.eps",
+           plot_ref_vs_nonref_and_effects(detailed_stats, detailed_stats_mean),
            path = paste0(data_path, "Publication_results/"),
-           width = 8, height = 8)
+           width = 6, height = 18)
   ),
   tar_target(
     ref_vs_nonref_by_train_method_plot,
