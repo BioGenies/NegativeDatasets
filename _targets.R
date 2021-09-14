@@ -251,7 +251,7 @@ list(
     ggsave(filename = "results_mean_AUC+SD.eps",
            get_results_plot_mean_auc_sd(detailed_stats_mean),
            path = paste0(data_path, "Publication_results/"),
-           width = 10, height = 9)
+           width = 18, height = 16)
   ),
   tar_target(
     ref_vs_nonref_and_effects_plot,

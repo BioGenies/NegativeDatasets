@@ -633,6 +633,6 @@ plot_ref_vs_nonref_and_effects <- function(detailed_stats, detailed_stats_mean) 
   boxplots <- plot_effect_boxplots(detailed_stats)
   ref_vs_nonref <- plot_reference_vs_nonreference(detailed_stats_mean) +
     theme(legend.position = "none")
-  ref_vs_nonref / x[[1]] / x[[2]] / x[[3]] 
+  ref_vs_nonref / boxplots[[1]] / boxplots[[2]] / boxplots[[3]] 
 }
 
