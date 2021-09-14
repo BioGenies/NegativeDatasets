@@ -486,16 +486,35 @@ get_statistical_analysis_plot_aa_comp_replicates <- function(aa_comp_peptides) {
 }
 
 
-get_sequence_length_table <- function(df_all, data_path) {
+get_train_dataset_size_table <- function(df_all, data_path) {
   df_all %>% 
     group_by(method, rep) %>% 
     dplyr::summarise(n = n()) %>% 
     pivot_wider(names_from = "rep", values_from = "n") %>% 
     xtable %>% 
-    print(file = paste0(data_path, "Publication_results/sequence_length_table.txt"),
+    print(file = paste0(data_path, "Publication_results/train_dataset_size_table.txt"),
           include.rownames = FALSE)
 }
 
+get_benchmark_dataset_size_table <- function(data_path, methods) {
+  df <- lapply(1:5, function(ith_rep) {
+    s <- read_fasta(paste0(data_path, "Datasets/Benchmark_rep", ith_rep, ".fasta"))
+    lapply(methods, function(ith_method) {
+      data.frame(method = ith_method,
+                 rep = ith_rep,
+                 n = as.character(sum(grepl(ith_method, names(s)))))
+    }) %>% bind_rows()
+  }) %>% bind_rows()
+  pos <- read_fasta(paste0(data_path, "Datasets/Benchmark_rep1.fasta"))
+  pos_df <- data.frame(method = "Positive",
+                       rep = 1:5,
+                       n = c(as.character(sum(grepl("AMP=1", names(pos)))), rep("", 4)))
+  bind_rows(pos_df, df) %>% 
+    pivot_wider(names_from = "rep", values_from = "n") %>% 
+    xtable %>% 
+    print(file = paste0(data_path, "Publication_results/benchmark_dataset_size_table.txt"),
+          include.rownames = FALSE)
+}
 
 get_statistical_analysis_plot_aa_comp_methods <- function(aa_comp_peptides_all) {
   combns <- combn(unique(aa_comp_peptides_all[["method"]]), 2, simplify = FALSE)
@@ -635,4 +654,5 @@ plot_ref_vs_nonref_and_effects <- function(detailed_stats, detailed_stats_mean) 
     theme(legend.position = "none")
   ref_vs_nonref / boxplots[[1]] / boxplots[[2]] / boxplots[[3]] 
 }
+
 

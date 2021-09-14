@@ -214,8 +214,14 @@ list(
            width = 10, height = 8)
   ),
   tar_target(
-    sequence_length_table,
-    get_sequence_length_table(df_all, data_path) 
+    train_dataset_size_table,
+    get_train_dataset_size_table(df_all, data_path) 
+  ),
+  tar_target(
+    benchmark_dataset_size_table,
+    get_benchmark_dataset_size_table(data_path, 
+                                     c("AMAP", "AmpGram", "ampir-mature", "AMPlify", "AMPScannerV2", 
+                                       "CS-AMPPred", "dbAMP", "Gabere&Noble", "iAMP-2L", "Wang", "Witten&Witten"))
   ),
   tar_target(
     aa_comp_methods_test_plot,
