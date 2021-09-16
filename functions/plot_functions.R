@@ -569,7 +569,7 @@ get_reference_auc_df <- function(detailed_stats_mean) {
     select(architecture, seq_source, reference_AUC = mean_AUC)
 }
 
-plot_reference_vs_nonreference <- function(detailed_stats_mean) {
+get_reference_nonreference_AUC <- function(detailed_stats_mean) {
   reference_auc_df <- get_reference_auc_df(detailed_stats_mean)
   
   inner_join(reference_auc_df %>% 
@@ -577,9 +577,21 @@ plot_reference_vs_nonreference <- function(detailed_stats_mean) {
                dplyr::summarise(reference_mean_AUC = mean(reference_AUC)),
              detailed_stats_mean %>%
                filter(method != seq_source) %>% 
-               select(architecture, seq_source, nonreference_AUC = mean_AUC) %>% 
+               select(architecture, method, seq_source, nonreference_AUC = mean_AUC) %>% 
                dplyr::group_by(architecture) %>% 
-               dplyr::summarise(nonreference_mean_AUC = mean(nonreference_AUC))) %>% 
+               dplyr::summarise(nonreference_mean_AUC = mean(nonreference_AUC))) 
+}
+
+get_reference_nonreference_AUC_table <- function(detailed_stats_mean) {
+  df <- get_reference_nonreference_AUC(detailed_stats_mean)
+  colnames(df) <- c("Architecture", "Mean reference AUC", "Mean nonreference AUC")
+  print(xtable(df),
+        file = paste0(data_path, "Publication_results/reference_vs_nonreference_auc_table.txt"),
+        include.rownames = FALSE)
+}
+
+plot_reference_vs_nonreference <- function(detailed_stats_mean, architecture_colors) {
+  get_reference_nonreference_AUC(detailed_stats_mean) %>% 
     ggplot(aes(x = reference_mean_AUC, y = nonreference_mean_AUC,
                color = architecture, label = architecture)) +
     geom_point(size = 3) +
@@ -589,14 +601,14 @@ plot_reference_vs_nonreference <- function(detailed_stats_mean) {
                        limits = c(0.5, 1)) +
     scale_y_continuous("Mean AUC if trained and tested using\ndata sampled with different methods", 
                        limits = c(0.5, 1)) +
-    scale_color_discrete("Architecture") +
+    scale_color_manual("Architecture", values = architecture_colors) +
     coord_equal() +
     theme_bw() +
     labs(tag = "A") +
     theme(plot.tag = element_text(size = 24))
 }
 
-plot_reference_vs_nonreference_by_train_method <- function(detailed_stats_mean) {
+plot_reference_vs_nonreference_by_train_method <- function(detailed_stats_mean, architecture_colors) {
   reference_auc_df <- get_reference_auc_df(detailed_stats_mean)
   
   inner_join(reference_auc_df %>% 
@@ -617,42 +629,44 @@ plot_reference_vs_nonreference_by_train_method <- function(detailed_stats_mean) 
                        limits = c(0.5, 1)) +
     scale_y_continuous("Mean AUC if trained and tested using data sampled with different methods", 
                        limits = c(0.5, 1)) +
-    scale_color_discrete("Architecture") +
+    scale_color_manual("Architecture", values = architecture_colors) +
     coord_equal() +
     theme_bw()
 }
 
 
 plot_auc_boxplot <- function(detailed_stats, type) {
-  ggplot(detailed_stats, aes(x = get(type), y = AUC)) +
-    geom_boxplot() +
+  ggplot(detailed_stats, aes(x = get(type), y = AUC, fill = get(type))) +
+    geom_boxplot(alpha = 0.25) +
     theme_bw() + 
-    theme(plot.title = element_text(hjust = 0.5))
+    coord_flip() +
+    theme(plot.title = element_text(hjust = 0.5),
+          plot.tag = element_text(size = 24),
+          aspect.ratio = 1,
+          legend.position = "none")
 }
 
-plot_effect_boxplots <- function(detailed_stats) {
+plot_effect_boxplots <- function(detailed_stats, architecture_colors, dataset_colors) {
   a <- plot_auc_boxplot(detailed_stats, "architecture") +
     labs(tag = "B") +
-    theme(axis.title.x = element_blank(),
-          plot.tag.position = c(0.01, 0.99),
-          plot.tag = element_text(size = 24)) +
     xlab("Architecture") +
-    coord_flip() 
+    scale_fill_manual(values = architecture_colors)
   m <- plot_auc_boxplot(detailed_stats, "method") +
-    theme(axis.title.x = element_blank()) +
+    labs(tag = "C") +
     xlab("Training dataset sampling method") +
-    coord_flip() 
+    scale_fill_manual(values = dataset_colors)
   s <- plot_auc_boxplot(detailed_stats, "seq_source") +
-    xlab("Benchmark dataset sampling method") +
-    coord_flip()
+    labs(tag = "D") +
+    xlab("Benchmark dataset sampling method")  +
+    scale_fill_manual(values = dataset_colors)
   list(a, m, s)
 }
 
-plot_ref_vs_nonref_and_effects <- function(detailed_stats, detailed_stats_mean) {
-  boxplots <- plot_effect_boxplots(detailed_stats)
-  ref_vs_nonref <- plot_reference_vs_nonreference(detailed_stats_mean) +
-    theme(legend.position = "none")
-  ref_vs_nonref / boxplots[[1]] / boxplots[[2]] / boxplots[[3]] 
+plot_ref_vs_nonref_and_effects <- function(detailed_stats, detailed_stats_mean, architecture_colors, dataset_colors) {
+  boxplots <- plot_effect_boxplots(detailed_stats, architecture_colors, dataset_colors)
+  ref_vs_nonref <- plot_reference_vs_nonreference(detailed_stats_mean, architecture_colors) +
+    theme(legend.position = "none") 
+  (ref_vs_nonref + boxplots[[1]]) / (boxplots[[2]] + boxplots[[3]])
 }
 
 

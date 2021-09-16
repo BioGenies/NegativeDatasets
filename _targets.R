@@ -90,6 +90,11 @@ list(
       `Gabere&Noble` = "#7688f2", `iAMP-2L` = "#eff275", `Wang et al.` = "#80f276", `Witten&Witten` = "#ccf276")
   ),
   tar_target(
+    architecture_colors,
+    c(AMAP = "#b67f49", AmPEP = "#6cb649", AmPEPpy = "#33803f", AmpGram = "#bc5658", Ampir = "#497db6", AMPScannerV2 = "#7f49b6", 
+      `CS-AMPPred` = "#49b5b6", `Deep-AmPEP30` = "#b6498b", `iAMP-2L` = "#e1df81", MACREL = "#81b6e1", MLAMP = "#8e8e8e", `SVM-LZ` = "#d0ad2f")
+  ),
+  tar_target(
     aa_comp_peptides,
     calculate_aa_comp_peptides(methods, 5, paste0(data_path, "Datasets/"))
   ),
@@ -261,17 +266,21 @@ list(
   ),
   tar_target(
     ref_vs_nonref_and_effects_plot,
-    ggsave(filename = "reference_vs_nonreference+effects.eps",
-           plot_ref_vs_nonref_and_effects(detailed_stats, detailed_stats_mean),
+    ggsave(filename = "reference_vs_nonreference+effects.pdf",
+           plot_ref_vs_nonref_and_effects(detailed_stats, detailed_stats_mean, architecture_colors, dataset_colors),
            path = paste0(data_path, "Publication_results/"),
-           width = 6, height = 18)
+           width = 14, height = 14)
   ),
   tar_target(
     ref_vs_nonref_by_train_method_plot,
     ggsave(filename = "reference_vs_nonreference_by_train_method.eps",
-           plot_reference_vs_nonreference_by_train_method(detailed_stats_mean),
+           plot_reference_vs_nonreference_by_train_method(detailed_stats_mean, architecture_colors),
            path = paste0(data_path, "Publication_results/"),
            width = 24, height = 22)
+  ),
+  tar_target(
+    ref_vs_nonref_table,
+    get_reference_nonreference_AUC_table(detailed_stats_mean)
   )
 )
 
