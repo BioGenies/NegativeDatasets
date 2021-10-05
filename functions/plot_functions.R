@@ -493,7 +493,7 @@ get_statistical_analysis_plot_aa_comp_replicates <- function(aa_comp_peptides) {
     theme_bw() +
     theme(legend.position = "bottom") +
     xlab("Amino acid") +
-    ylab("Sampling method used for generation of training negative data set (TSM)")
+    ylab("Sampling method used for generation\nof training negative data set (TSM)")
 }
 
 
