@@ -26,6 +26,12 @@ change_method_names <- function(df) {
                                               "AMPlify", "AMPScannerV2", "Positive") ~ method))
 }
 
+modify_labels <- function(df, types, shortcuts) {
+  for(i in seq_along(types)) {
+    df[[types[i]]] <- sapply(df[[types[i]]], function(j) paste0(shortcuts[i], ":", j))
+  }
+  df
+}
 
 calculate_properties <- function(ds_neg, method, rep) {
   data.frame(prot = names(ds_neg),
@@ -298,7 +304,8 @@ get_aa_comp_heatmap <- function(aa_comp_all) {
   aa_comp_heatmap_dat <- aa_comp_all %>% 
     pivot_wider(names_from = "aa", values_from = "Freq", values_fill = 0) %>% 
     mutate(Dataset = ifelse(Dataset == "Positive", "Positive", paste0(method, "_rep", rep))) %>% 
-    select(-c(method, rep)) 
+    select(-c(method, rep)) %>% 
+    modify_labels(types = "Dataset", shortcuts = "TSM")
   
   clustering_methods <- as.dendrogram(hclust(dist(as.matrix(aa_comp_heatmap_dat[,2:21]))))
   methods_order <- order.dendrogram(clustering_methods)
@@ -324,7 +331,8 @@ get_aa_comp_heatmap <- function(aa_comp_all) {
     scale_fill_gradientn(colors = c("#ffffff", "#ffe96b", "#ff4242", "#630000"), values = rescale(c(0, 0.03, 0.08, 0.14), to = c(0, 1))) +
     theme_bw() +
     theme(legend.position = "bottom",
-          legend.key.width = unit(2, "lines"))
+          legend.key.width = unit(2, "lines")) +
+    ylab("Data set")
   
   max_height <- unit.pmax(ggplotGrob(heatmap)[["heights"]],
                           ggplotGrob(dendro)[["heights"]])
@@ -351,8 +359,8 @@ get_pca_aa_comp_plot <- function(aa_comp_all, dataset_colors) {
     theme_bw() +
     geom_point(aes(color = pca_data_all[["method"]], shape = pca_data_all[["method"]]), size = 3) +
     theme(plot.title = element_text(hjust = 0.5)) +
-    scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
-    scale_shape_manual("Dataset", values = c(17, rep(16, 11)), labels = names(dataset_colors))
+    scale_color_manual("Data set", values = dataset_colors, labels = sapply(names(dataset_colors), function(i) ifelse(i != "Positive", paste0("TSM:", i), i))) +
+    scale_shape_manual("Data set", values = c(17, rep(16, 11)), labels = sapply(names(dataset_colors), function(i) ifelse(i != "Positive", paste0("TSM:", i), i)))
 }
 
 
@@ -380,8 +388,8 @@ get_pca_prop_plot <- function(df_all, dataset_colors) {
     geom_point(aes(color = props_all[["method"]], shape = props_all[["method"]]), size = 1.5) +
     theme_bw() +
     theme(plot.title = element_text(hjust = 0.5)) +
-    scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
-    scale_shape_manual("Dataset", values = c(17, rep(16, 11)), labels = names(dataset_colors)) +
+    scale_color_manual("Data set", values = dataset_colors, labels = sapply(names(dataset_colors), function(i) ifelse(i != "Positive", paste0("TSM:", i), i))) +
+    scale_shape_manual("Data set", values = c(17, rep(16, 11)), labels = sapply(names(dataset_colors), function(i) ifelse(i != "Positive", paste0("TSM:", i), i))) +
     xlim(c(-5.5, 6.2)) +
     ylim(c(-5.5, 4))
 }
@@ -401,7 +409,8 @@ get_aa_comp_barplot <- function(aa_comp_all, dataset_colors) {
     theme_bw() +
     theme(axis.text.x = element_text(angle = 90)) +
     #ggtitle("Differences in amino acid frequency using different sampling methods") +
-    theme(legend.position = "none")
+    theme(legend.position = "none") +
+    xlab("Sampling method used for generation of training negative data set (TSM)")
 }
 
 get_pca_res_ngrams <- function(ngram_counts_sum_all) {
@@ -413,8 +422,8 @@ plot_pca_res_ngrams <- function(pca_ngram_res, ngram_counts_sum_all, dataset_col
   ggbiplot(pca_ngram_res, choices = 1:2, var.axes = FALSE) +
     geom_point(aes(color = ngram_counts_sum_all[["method"]], shape = ngram_counts_sum_all[["method"]]), size = 3) +
     theme_bw() +
-    scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
-    scale_shape_manual("Dataset", values = c(17, rep(16, 11)), labels = names(dataset_colors)) 
+    scale_color_manual("Data set", values = dataset_colors, labels = sapply(names(dataset_colors), function(i) ifelse(i != "Positive", paste0("TSM:", i), i))) +
+    scale_shape_manual("Data set", values = c(17, rep(16, 11)), labels = sapply(names(dataset_colors), function(i) ifelse(i != "Positive", paste0("TSM:", i), i)))
 }
 
 plot_pca_res_ngrams_zoom <- function(pca_ngram_res, ngram_counts_sum_all, dataset_colors) {
@@ -431,7 +440,7 @@ plot_pca_res_ngrams_zoom <- function(pca_ngram_res, ngram_counts_sum_all, datase
 }
 
 get_sequence_length_plot <- function(df_all) {
-  
+  df_all <- mutate(df_all, method = ifelse(method == "Positive", "Positive", paste0("TSM:", method)))
   plist <- lapply(unique(df_all[["method"]]), function(ith_method) {
     df_all %>% 
       filter(method == ith_method) %>% 
@@ -447,10 +456,10 @@ get_sequence_length_plot <- function(df_all) {
   
   blank <- ggplot() + theme_void()
   
-  p <- plot_grid(plotlist = list(plist[["Positive"]], plist[["AMAP"]], plist[["Gabere&Noble"]], plist[["CS-AMPPred"]], plist[["ampir-mature"]], 
-                                 blank, plist[["AmpGram"]], plist[["Wang et al."]], plist[["dbAMP"]], blank,
-                                 blank, plist[["AMPlify"]], blank, plist[["iAMP-2L"]], blank,
-                                 blank, plist[["AMPScannerV2"]], blank, blank, blank, blank, plist[["Witten&Witten"]]),
+  p <- plot_grid(plotlist = list(plist[["Positive"]], plist[["TSM:AMAP"]], plist[["TSM:Gabere&Noble"]], plist[["TSM:CS-AMPPred"]], plist[["TSM:ampir-mature"]], 
+                                 blank, plist[["TSM:AmpGram"]], plist[["TSM:Wang et al."]], plist[["TSM:dbAMP"]], blank,
+                                 blank, plist[["TSM:AMPlify"]], blank, plist[["TSM:iAMP-2L"]], blank,
+                                 blank, plist[["TSM:AMPScannerV2"]], blank, blank, blank, blank, plist[["TSM:Witten&Witten"]]),
                  nrow = 5, ncol = 5, rel_widths = c(1, 2.5, 2.5, 2.5, 2.5)) 
   
   grid.arrange(arrangeGrob(p, left = textGrob("Length", rot = 90), bottom = textGrob("Replication")))
@@ -480,9 +489,11 @@ get_statistical_analysis_plot_aa_comp_replicates <- function(aa_comp_peptides) {
     dplyr::summarise(n_signif = as.factor(sum(pval_adjusted < 0.05))) %>%
     ggplot(aes(x = aa, y = method, fill = n_signif)) +
     geom_tile(color = "white") +
-    scale_fill_manual("n of significant comparisons", values = "#76bef2", na.value = "grey90") +
+    scale_fill_manual("Number of significant comparisons", values = "#76bef2", na.value = "grey90") +
     theme_bw() +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom") +
+    xlab("Amino acid") +
+    ylab("Sampling method used for generation of training negative data set (TSM)")
 }
 
 
@@ -517,6 +528,9 @@ get_benchmark_dataset_size_table <- function(data_path, methods) {
 }
 
 get_statistical_analysis_plot_aa_comp_methods <- function(aa_comp_peptides_all) {
+  m <- as.character(unique(filter(aa_comp_peptides_all, method != "Positive")[["method"]]))
+  aa_comp_peptides_all <- mutate(aa_comp_peptides_all, method = factor(ifelse(method == "Positive", "Positive", paste0("TSM:", method)),
+                                                                       levels = c(paste0("TSM:", m), "Positive")))
   combns <- combn(unique(aa_comp_peptides_all[["method"]]), 2, simplify = FALSE)
   test_res_methods <- lapply(seq_along(combns), function(ith_combn) {
     test_dat <- filter(aa_comp_peptides_all, method  %in% combns[[ith_combn]])
@@ -540,16 +554,19 @@ get_statistical_analysis_plot_aa_comp_methods <- function(aa_comp_peptides_all) 
     theme_bw() +
     theme(panel.grid.major = element_blank(),
           axis.text.x = element_text(angle = 90)) +
-    scale_fill_manual("Is significant", values = c(`FALSE` = "#76bef2", `TRUE` = "#ff4242"))
+    scale_fill_manual("Is significant", values = c(`FALSE` = "#76bef2", `TRUE` = "#ff4242")) +
+    xlab("First method") +
+    ylab("Second method")
 }
 
 get_results_plot_mean_auc_sd <- function(detailed_stats_mean) {
   dat <- detailed_stats_mean %>% 
-    mutate(ident = seq_source == method) 
+    mutate(ident = seq_source == method) %>% 
+    modify_labels(types = c("architecture"), shortcuts = c("A"))
   ggplot(dat, aes(x = method, y = seq_source, fill = mean_AUC)) +
     geom_tile(size = 1) +
     geom_tile(data = dat[dat[["ident"]] == TRUE, ], aes(color = ident), size = 1) +
-    geom_point(data = detailed_stats_mean, aes(x = method, y = seq_source, size = sd),
+    geom_point(data = dat, aes(x = method, y = seq_source, size = sd),
                color = "black") +
     facet_wrap(~architecture, ncol = 4) +
     scale_fill_gradient("Mean AUC", low =  "#ffe96b",  high = "#ff4242",
@@ -559,8 +576,8 @@ get_results_plot_mean_auc_sd <- function(detailed_stats_mean) {
     theme_bw(base_size = 16) +
     theme(axis.text.x = element_text(angle = 90), legend.position = "bottom",
           legend.key.width = unit(2, "cm")) +
-    xlab("Sampling method used for generation of training negative dataset") +
-    ylab("Sampling method used for generation of test negative dataset")
+    xlab("Sampling method used for generation of training negative data set (TSM)") +
+    ylab("Sampling method used for generation of benchmark negative data set (BSM)")
 }
 
 get_reference_auc_df <- function(detailed_stats_mean) {
@@ -591,7 +608,10 @@ get_reference_nonreference_AUC_table <- function(detailed_stats_mean) {
 }
 
 plot_reference_vs_nonreference <- function(detailed_stats_mean, architecture_colors) {
-  get_reference_nonreference_AUC(detailed_stats_mean) %>% 
+  names(architecture_colors) <- paste0("A:", names(architecture_colors))
+  detailed_stats_mean %>% 
+    modify_labels(types = c("architecture"), shortcuts = c("A")) %>% 
+    get_reference_nonreference_AUC() %>% 
     ggplot(aes(x = reference_mean_AUC, y = nonreference_mean_AUC,
                color = architecture, label = architecture)) +
     geom_point(size = 3) +
@@ -605,11 +625,14 @@ plot_reference_vs_nonreference <- function(detailed_stats_mean, architecture_col
     coord_equal() +
     theme_bw() +
     labs(tag = "A") +
-    theme(plot.tag = element_text(size = 24))
+    theme(plot.tag = element_text(size = 24),
+          legend.position = "none")
 }
 
 plot_reference_vs_nonreference_by_train_method <- function(detailed_stats_mean, architecture_colors) {
-  reference_auc_df <- get_reference_auc_df(detailed_stats_mean)
+  names(architecture_colors) <- paste0("A:", names(architecture_colors))
+  reference_auc_df <- detailed_stats_mean %>% 
+    get_reference_auc_df() 
   
   inner_join(reference_auc_df %>% 
                dplyr::group_by(architecture) %>% 
@@ -618,7 +641,8 @@ plot_reference_vs_nonreference_by_train_method <- function(detailed_stats_mean, 
                filter(method != seq_source) %>% 
                select(architecture, method, seq_source, nonreference_AUC = mean_AUC) %>% 
                dplyr::group_by(architecture, method) %>% 
-               dplyr::summarise(nonreference_mean_AUC = mean(nonreference_AUC))) %>% 
+               dplyr::summarise(nonreference_mean_AUC = mean(nonreference_AUC)))  %>% 
+    modify_labels(types = c("architecture", "method"), shortcuts = c("A", "TSM")) %>% 
     ggplot(aes(x = reference_mean_AUC, y = nonreference_mean_AUC,
                color = architecture, label = architecture)) +
     geom_point(size = 3) +
@@ -631,7 +655,8 @@ plot_reference_vs_nonreference_by_train_method <- function(detailed_stats_mean, 
                        limits = c(0.5, 1)) +
     scale_color_manual("Architecture", values = architecture_colors) +
     coord_equal() +
-    theme_bw()
+    theme_bw() +
+    theme(legend.position = "none")
 }
 
 
@@ -649,15 +674,15 @@ plot_auc_boxplot <- function(detailed_stats, type) {
 plot_effect_boxplots <- function(detailed_stats, architecture_colors, dataset_colors) {
   a <- plot_auc_boxplot(detailed_stats, "architecture") +
     labs(tag = "B") +
-    xlab("Architecture") +
+    xlab("Architecture (A)") +
     scale_fill_manual(values = architecture_colors)
   m <- plot_auc_boxplot(detailed_stats, "method") +
     labs(tag = "C") +
-    xlab("Training dataset sampling method") +
+    xlab("Training data set sampling method (TSM)") +
     scale_fill_manual(values = dataset_colors)
   s <- plot_auc_boxplot(detailed_stats, "seq_source") +
     labs(tag = "D") +
-    xlab("Benchmark dataset sampling method")  +
+    xlab("Benchmark data set sampling method (BSM)")  +
     scale_fill_manual(values = dataset_colors)
   list(a, m, s)
 }
