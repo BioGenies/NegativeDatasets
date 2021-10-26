@@ -26,6 +26,10 @@ if(Sys.info()[["nodename"]] == "ryzen") {
   data_path <- "~/Dropbox/Projekty/BioNgramProjects/NegativeDatasets/"
 }
 
+if(Sys.info()[["nodename"]] == "huawei") {
+  data_path <- "/home/michal/Dropbox/BioNgramProjects/NegativeDatasets/"
+}
+
 source("functions/generate_positive_dataset.R")
 source("functions/read_uniprot_seqs.R")
 source("functions/filter_sequences.R")
