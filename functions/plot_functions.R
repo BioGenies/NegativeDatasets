@@ -50,6 +50,9 @@ calculate_properties <- function(ds_neg, method, rep) {
              check.names = FALSE)
 }
 
+# This is a modified version of ggbiplot function from ggbiplot package
+# https://github.com/vqv/ggbiplot/blob/master/R/ggbiplot.r
+# Copyright 2011 Vincent Q. Vu.
 my_ggbiplot <- function(pcobj, choices = 1:2, scale = 1, pc.biplot = TRUE, 
                         obs.scale = 1 - scale, var.scale = scale, 
                         groups = NULL, ellipse = FALSE, ellipse.prob = 0.68, 
@@ -272,7 +275,7 @@ get_ngram_counts_sum <- function(methods, n_rep, data_path) {
       ngrams <- count_multimers(seqs,
                                 k_vector = c(rep(2, 4), rep(3, 4)),
                                 kmer_gaps_list = list(NULL, 1, 2, 3, c(0, 0), c(1, 0), c(0, 1), c(1, 1)),
-                                alphabet = toupper(colnames(biogram::aaprop))) %>%
+                                kmer_alphabet = toupper(colnames(biogram::aaprop))) %>%
         as.matrix() %>% 
         colSums()/length(seqs) 
       ngrams %>% 
@@ -289,7 +292,7 @@ get_ngram_counts_sum_pos <- function(positive) {
   ngram_counts_sum_pos <- count_multimers(positive,
                                           k_vector = c(rep(2, 4), rep(3, 4)),
                                           kmer_gaps_list = list(NULL, 1, 2, 3, c(0, 0), c(1, 0), c(0, 1), c(1, 1)),
-                                          alphabet = toupper(colnames(biogram::aaprop))) %>%
+                                          kmer_alphabet = toupper(colnames(biogram::aaprop))) %>%
     as.matrix() %>% 
     colSums()/length(positive) 
   ngram_counts_sum_pos %>% 
@@ -426,18 +429,7 @@ plot_pca_res_ngrams <- function(pca_ngram_res, ngram_counts_sum_all, dataset_col
     scale_shape_manual("Data set", values = c(17, rep(16, 11)), labels = sapply(names(dataset_colors), function(i) ifelse(i != "Positive", paste0("TSM:", i), i)))
 }
 
-plot_pca_res_ngrams_zoom <- function(pca_ngram_res, ngram_counts_sum_all, dataset_colors) {
-  ggbiplot(pca_ngram_res, choices = 1:2, var.axes = FALSE) +
-    geom_point(aes(color = ngram_counts_sum_all[["method"]], shape = ngram_counts_sum_all[["method"]]), size = 3) +
-    theme_bw() +
-    scale_color_manual("Dataset", values = dataset_colors, labels = names(dataset_colors)) +
-    scale_shape_manual("Dataset", values = c(17, rep(16, 11)), labels = names(dataset_colors)) +
-    xlim(c(-0.7, -0.25)) +
-    ylim(c(-0.85, -0.35)) + 
-    theme(legend.position = "none", 
-          axis.title.y = element_blank(),
-          axis.title.x = element_blank())
-}
+
 
 get_sequence_length_plot <- function(df_all) {
   df_all <- mutate(df_all, method = ifelse(method == "Positive", "Positive", paste0("TSM:", method)))

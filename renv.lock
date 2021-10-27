@@ -53,10 +53,10 @@
     },
     "RcppParallel": {
       "Package": "RcppParallel",
-      "Version": "5.0.3",
+      "Version": "5.1.4",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "157a1155dc1bdbb6aba8dad88c9ef460"
+      "Hash": "0325b5be38a02d192828027983c7b470"
     },
     "backports": {
       "Package": "backports",
@@ -133,13 +133,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "f0acb9dcb71a9cd9d5ae233c5035b1c5"
-    },
-    "cowplot": {
-      "Package": "cowplot",
-      "Version": "1.1.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "b418e8423699d11c7f2087c2bfd07da2"
     },
     "cpp11": {
       "Package": "cpp11",
@@ -264,6 +257,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "4ded8b439797f7b1693bd3d238d0106b"
+    },
+    "ggrepel": {
+      "Package": "ggrepel",
+      "Version": "0.9.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "08ab869f37e6a7741a64ab9069bcb67d"
     },
     "glue": {
       "Package": "glue",
@@ -419,6 +419,13 @@
       "Repository": "CRAN",
       "Hash": "84fefa16602ee34075edff513d965f24"
     },
+    "patchwork": {
+      "Package": "patchwork",
+      "Version": "1.1.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "c446b30cb33ec125ff02588b60660ccb"
+    },
     "pbapply": {
       "Package": "pbapply",
       "Version": "1.4-3",
@@ -547,9 +554,10 @@
     },
     "seqR": {
       "Package": "seqR",
-      "Version": "0.8.0",
-      "Source": "unknown",
-      "Hash": "71e60e94d8617ff69a51fb1bc0c11ad5"
+      "Version": "1.0.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "19dc5754566f502da1e7b4c17d6c2285"
     },
     "sets": {
       "Package": "sets",

@@ -7,7 +7,6 @@ library(ggdendro)
 library(grid)
 library(gridExtra)
 library(ggbiplot)
-library(cowplot)
 library(xtable)
 library(seqR)
 library(scales)
@@ -189,18 +188,6 @@ list(
            path = paste0(data_path, "Publication_results/"),
            width = 10, height = 10)
   ),
-  # tar_target(
-  #   ngram_pca_plot_zoom,
-  #   plot_pca_res_ngrams_zoom(ngram_pca, ngram_counts_sum_all, dataset_colors)
-  # ),
-  # tar_target(
-  #   ngram_pca_combined,
-  #   ggsave(filename = "pca_ngrams.eps",
-  #          ngram_pca_plot + annotation_custom(ggplotGrob(ngram_pca_plot_zoom), 
-  #                                             xmin = 1, xmax = 3, ymin = 0, ymax = 1.75),
-  #          path = paste0(data_path, "Publication_results/"),
-  #          width = 10, height = 10)
-  # ),
   tar_target(
     sequence_length_plot,
     ggsave(filename = "sequence_length.eps",
