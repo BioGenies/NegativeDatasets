@@ -1,4 +1,5 @@
-generate_holdout_groups <- function(sequences) {
+generate_holdout_groups <- function(sequences, seed) {
+  set.seed(seed = seed)
   seq_length_groups <- cut(lengths(sequences), 
                            breaks = as.numeric(quantile(lengths(sequences), probs = seq(0, 1, 0.2))),
                            include.lowest = TRUE)
