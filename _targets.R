@@ -63,7 +63,7 @@ list(
     get_putative_amps(data_path)),
   tar_target(
     holdouts,
-    generate_holdout_groups(positive_dataset, seed = 910843666)),
+    generate_holdout_groups(positive_dataset)),
   tar_target(
     positive_traintest,
     positive_dataset[unlist(sapply(holdouts, function(i) i[["traintest"]]), use.names = FALSE)]),
