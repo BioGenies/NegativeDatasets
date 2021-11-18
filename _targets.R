@@ -272,6 +272,33 @@ list(
   tar_target(
     ref_vs_nonref_table,
     get_reference_nonreference_AUC_table(detailed_stats_mean)
+  ),
+  tar_target(
+    ref_vs_nonref_stat_test_table,
+    get_ref_vs_nonref_test_table(detailed_stats)
+  ),
+  tar_target(
+    wilcox_test_architectures,
+    get_pairwise_paired_wilcox_test_table(detailed_stats_mean, 
+                                          "architecture",
+                                          paste0(data_path, "Publication_results/pairwise_wilcoxon_table_architectures.txt"))
+  ),
+  tar_target(
+    wilcox_test_architectures,
+    get_pairwise_paired_wilcox_test_table(detailed_stats_mean, 
+                                          "method",
+                                          paste0(data_path, "Publication_results/pairwise_wilcoxon_table_TSM.txt"))
+  ),
+  tar_target(
+    wilcox_test_architectures,
+    get_pairwise_paired_wilcox_test_table(detailed_stats_mean, 
+                                          "seq_source",
+                                          paste0(data_path, "Publication_results/pairwise_wilcoxon_table_BSM.txt"))
+  ),
+  tar_target(
+    mean_sd_table,
+    get_mean_sd_table(detailed_stats_mean, 
+                      paste0(data_path, "Publication_results/mean_sd_table.txt"))
   )
 )
 

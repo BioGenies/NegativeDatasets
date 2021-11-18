@@ -686,4 +686,37 @@ plot_ref_vs_nonref_and_effects <- function(detailed_stats, detailed_stats_mean, 
   (ref_vs_nonref + boxplots[[1]]) / (boxplots[[2]] + boxplots[[3]])
 }
 
+get_ref_vs_nonref_test_table <- function(detailed_stats) {
+  lapply(unique(detailed_stats[["architecture"]]), function(i) {
+    dat <- filter(detailed_stats, architecture == i) %>% 
+      mutate(type = ifelse(method == seq_source, "same", "diff"))
+    data.frame(Architecture = i,
+               pval = kruskal.test(dat[["AUC"]], dat[["type"]])[["p.value"]])
+  }) %>% bind_rows() %>% 
+    mutate(`Bonferroni corrected p-value` = p.adjust(pval, method = "bonferroni")) %>% 
+    arrange(Architecture) %>% 
+    select(-pval) %>% 
+    xtable(digits = -2) %>% 
+    print(file = paste0(data_path, "Publication_results/reference_vs_nonreference_test_table.txt"),
+          include.rownames = FALSE)
+}
 
+get_pairwise_paired_wilcox_test_table <- function(detailed_stats_mean, type, outfile) {
+  res <- pairwise.wilcox.test(detailed_stats_mean[["mean_AUC"]], 
+                       as.factor(detailed_stats_mean[[type]]), 
+                       p.adjust.method="bonferroni", 
+                       paired = TRUE) 
+  res[["p.value"]] %>% 
+    xtable(digits = -2)  %>% 
+    print(file = outfile)
+}
+
+get_mean_sd_table <- function(detailed_stats_mean, outfile) {
+  detailed_stats_mean %>% 
+    group_by(architecture) %>% 
+    summarise(`Mean SD` = mean(sd),
+              `Min SD` = min(sd),
+              `Max SD` = max(sd)) %>% 
+    xtable(digits = 5) %>% 
+    print(file = outfile)
+}
