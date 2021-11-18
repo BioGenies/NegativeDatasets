@@ -718,5 +718,6 @@ get_mean_sd_table <- function(detailed_stats_mean, outfile) {
               `Min SD` = min(sd),
               `Max SD` = max(sd)) %>% 
     xtable(digits = 5) %>% 
-    print(file = outfile)
+    print(include.rownames = FALSE,
+          file = outfile)
 }
