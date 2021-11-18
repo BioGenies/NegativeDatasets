@@ -284,13 +284,13 @@ list(
                                           paste0(data_path, "Publication_results/pairwise_wilcoxon_table_architectures.txt"))
   ),
   tar_target(
-    wilcox_test_architectures,
+    wilcox_test_tsm,
     get_pairwise_paired_wilcox_test_table(detailed_stats_mean, 
                                           "method",
                                           paste0(data_path, "Publication_results/pairwise_wilcoxon_table_TSM.txt"))
   ),
   tar_target(
-    wilcox_test_architectures,
+    wilcox_test_bsm,
     get_pairwise_paired_wilcox_test_table(detailed_stats_mean, 
                                           "seq_source",
                                           paste0(data_path, "Publication_results/pairwise_wilcoxon_table_BSM.txt"))
