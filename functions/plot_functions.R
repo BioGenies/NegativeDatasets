@@ -638,7 +638,7 @@ plot_reference_vs_nonreference_by_train_method <- function(detailed_stats_mean, 
     ggplot(aes(x = reference_mean_AUC, y = nonreference_mean_AUC,
                color = architecture, label = architecture)) +
     geom_point(size = 3) +
-    facet_wrap(~method) +
+    facet_wrap(~method, ncol = 2) +
     geom_abline(slope = 1, intercept = 0) +
     geom_label_repel() +
     scale_x_continuous("Mean AUC if trained and tested using data sampled with the same method", 
@@ -712,9 +712,11 @@ get_pairwise_paired_wilcox_test_table <- function(detailed_stats_mean, type, out
                        paired = TRUE) 
   res[["p.value"]] %>% 
     as.data.frame() %>% 
-    mutate(across(1:10, bold_significant)) %>% 
+    rownames_to_column() %>% 
+    mutate(across(2:ncol(.), bold_significant)) %>% 
+    column_to_rownames() %>% 
     xtable(digits = -2)  %>% 
-    print(file = outfile, sanitize.text.function = identity, include.rownames = FALSE)
+    print(file = outfile, sanitize.text.function = identity)
 }
 
 get_mean_sd_table <- function(detailed_stats_mean, outfile) {

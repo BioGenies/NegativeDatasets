@@ -15,6 +15,7 @@ library(hmeasure)
 library(ggrepel)
 library(dplyr)
 library(patchwork)
+library(tibble)
 
 
 if(Sys.info()[["nodename"]] == "kasia-MACH-WX9") {
@@ -263,11 +264,22 @@ list(
            width = 14, height = 14)
   ),
   tar_target(
-    ref_vs_nonref_by_train_method_plot,
-    ggsave(filename = "reference_vs_nonreference_by_train_method.eps",
-           plot_reference_vs_nonreference_by_train_method(detailed_stats_mean, architecture_colors),
+    ref_vs_nonref_by_train_method_plot_pt1,
+    ggsave(filename = "reference_vs_nonreference_by_train_method_pt1.eps",
+           plot_reference_vs_nonreference_by_train_method(filter(detailed_stats_mean, 
+                                                                 method %in% c("AMAP", "AmpGram", "ampir-mature", "AMPlify", "AMPScannerV2", "CS-AMPPred")), 
+                                                          architecture_colors),
            path = paste0(data_path, "Publication_results/"),
-           width = 24, height = 22)
+           width = 14, height = 21)
+  ),
+  tar_target(
+    ref_vs_nonref_by_train_method_plot_pt2,
+    ggsave(filename = "reference_vs_nonreference_by_train_method_pt2.eps",
+           plot_reference_vs_nonreference_by_train_method(filter(detailed_stats_mean, 
+                                                                 method %in% c("dbAMP", "Gabere&Noble", "iAMP-2L", "Wang et al.", "Witten&Witten")), 
+                                                          architecture_colors),
+           path = paste0(data_path, "Publication_results/"),
+           width = 14, height = 21)
   ),
   tar_target(
     ref_vs_nonref_table,
