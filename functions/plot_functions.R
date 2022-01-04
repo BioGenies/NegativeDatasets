@@ -714,7 +714,7 @@ get_pairwise_paired_wilcox_test_table <- function(detailed_stats_mean, type, out
     as.data.frame() %>% 
     mutate(across(1:10, bold_significant)) %>% 
     xtable(digits = -2)  %>% 
-    print(file = outfile, sanitize.text.function = identity)
+    print(file = outfile, sanitize.text.function = identity, include.rownames = FALSE)
 }
 
 get_mean_sd_table <- function(detailed_stats_mean, outfile) {
