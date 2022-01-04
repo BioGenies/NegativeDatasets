@@ -693,12 +693,16 @@ get_ref_vs_nonref_test_table <- function(detailed_stats) {
     data.frame(Architecture = i,
                pval = kruskal.test(dat[["AUC"]], dat[["type"]])[["p.value"]])
   }) %>% bind_rows() %>% 
-    mutate(`Bonferroni corrected p-value` = p.adjust(pval, method = "bonferroni")) %>% 
+    mutate(`Bonferroni corrected p-value` = bold_significant(p.adjust(pval, method = "bonferroni"))) %>% 
     arrange(Architecture) %>% 
     select(-pval) %>% 
     xtable(digits = -2) %>% 
     print(file = paste0(data_path, "Publication_results/reference_vs_nonreference_test_table.txt"),
-          include.rownames = FALSE)
+          include.rownames = FALSE, sanitize.text.function = identity)
+}
+
+bold_significant <- function(x) {
+  ifelse(x <= 0.05, paste0("\\textbf{", signif(x, digits = 3), "}"), paste0(signif(x, digits = 3)))
 }
 
 get_pairwise_paired_wilcox_test_table <- function(detailed_stats_mean, type, outfile) {
@@ -707,8 +711,10 @@ get_pairwise_paired_wilcox_test_table <- function(detailed_stats_mean, type, out
                        p.adjust.method="bonferroni", 
                        paired = TRUE) 
   res[["p.value"]] %>% 
+    as.data.frame() %>% 
+    mutate(across(1:10, bold_significant)) %>% 
     xtable(digits = -2)  %>% 
-    print(file = outfile)
+    print(file = outfile, sanitize.text.function = identity)
 }
 
 get_mean_sd_table <- function(detailed_stats_mean, outfile) {
