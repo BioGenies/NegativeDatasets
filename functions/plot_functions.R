@@ -707,9 +707,9 @@ bold_significant <- function(x) {
 
 get_pairwise_paired_wilcox_test_table <- function(detailed_stats_mean, type, outfile) {
   res <- pairwise.wilcox.test(detailed_stats_mean[["mean_AUC"]], 
-                       as.factor(detailed_stats_mean[[type]]), 
-                       p.adjust.method="bonferroni", 
-                       paired = TRUE) 
+                              as.factor(detailed_stats_mean[[type]]), 
+                              p.adjust.method="bonferroni", 
+                              paired = TRUE) 
   res[["p.value"]] %>% 
     as.data.frame() %>% 
     rownames_to_column() %>% 
@@ -728,4 +728,126 @@ get_mean_sd_table <- function(detailed_stats_mean, outfile) {
     xtable(digits = 5) %>% 
     print(include.rownames = FALSE,
           file = outfile)
+}
+
+
+calculate_test_train_aa_comp_diffs <- function(data_path, methods_seqnames= c("iAMP-2L", "dbAMP", "ampir-mature", "CS-AMPPred",
+                                                                              "Wang", "AmpGram", "Witten&Witten", "AMPScannerV2", "Gabere&Noble", "AMAP", "AMPlify")) {
+  lapply(1:5, function(j) {
+    ds <- read_fasta(paste0(data_path, "Benchmark_rep", j, ".fasta"))
+    pos <- unlist(ds[which(grepl("AMP=1", names(ds)))], use.names = FALSE)
+    neg_df <- lapply(1:length(methods_seqnames), function(ith_method) {
+      aa <- unlist(ds[which(grepl(methods_seqnames[ith_method], names(ds), fixed = TRUE))], use.names = FALSE)
+      as.data.frame(table(aa)/length(aa)) %>% 
+        mutate(method = ifelse(methods_seqnames[ith_method] == "Wang", "Wang et al.", methods_seqnames[ith_method]))
+    }) %>% bind_rows() %>% 
+      mutate(rep = as.character(j),
+             Dataset = "Negative")
+    pos_df <- mutate(setNames(as.data.frame(table(pos)/length(pos)), c("aa", "Freq")),
+                     method = "Positive", rep = as.character(j), Dataset = "Positive")
+    bind_rows(neg_df, pos_df)
+  }) %>% bind_rows() %>% 
+    mutate(Type = "Testing") %>% 
+    bind_rows(change_method_names(mutate(filter(aa_comp_all, !(method %in% c("AmPEP", "ampir-precursor"))), Type = "Training")))
+}
+
+calculate_spearman_corr_test_train_aa_comp <- function(aa_comp_traintest) {
+  test_train_diffs_all <- lapply(1:5, function(ith_rep) {
+    lapply(unique(aa_comp_traintest[["method"]])[1:11],
+           function(ith_method) {
+             lapply(unique(aa_comp_traintest[["method"]])[1:11],
+                    function(ith_seq) {
+                      lapply(unique(dat[["aa"]]), function(ith_aa) {
+                        train <- filter(aa_comp_traintest, method == ith_method, rep ==
+                                          ith_rep, aa == ith_aa, Type == "Training")[["Freq"]]
+                        test <- filter(aa_comp_traintest, method == ith_seq, rep ==
+                                         ith_rep, aa == ith_aa, Type == "Testing")[["Freq"]]
+                        tr <- ifelse(length(train) == 0, 0, train)
+                        te <- ifelse(length(test) == 0, 0, test)
+                        data.frame(method = ith_method, seq_source = ith_seq,
+                                   aa = ith_aa,
+                                   rep = ith_rep,
+                                   diff = abs(te-tr),
+                                   norm_diff = abs(te-tr)/tr,
+                                   square_diff = (te-tr)^2,
+                                   norm_square_diff = ((te-tr)^2)/tr)
+                      }) %>% bind_rows()
+                    }) %>% bind_rows()
+           }) %>% bind_rows()
+  }) %>% bind_rows()
+  
+  test_train_diffs_plot_dat_all <- detailed_stats %>%
+    dplyr::group_by(method, seq_source, rep) %>%
+    dplyr::summarise(mean_AUC = mean(AUC)) %>%
+    left_join(test_train_diffs_all, by = c("method", "seq_source", "rep"))
+  
+  test_train_diffs_zeb_all <- test_train_diffs_plot_dat_all %>%
+    dplyr::group_by(method, seq_source, rep, mean_AUC) %>%
+    dplyr::summarise(sum_diff = sum(diff), 
+                     sum_norm_diff = sum(norm_diff*is.finite(norm_diff), na.rm = TRUE), 
+                     sum_square_diff = sum(square_diff), 
+                     sum_norm_square_diff = sum(norm_square_diff*is.finite(norm_square_diff), na.rm = TRUE))
+  
+  cor.test(x = test_train_diffs_zeb_all[["mean_AUC"]], y = sqrt(test_train_diffs_zeb_all[["sum_square_diff"]]))
+}
+
+get_benchmark_dataset_lengths <- function(data_path, methods) {
+  df <- lapply(1:5, function(ith_rep) {
+    s <- read_fasta(paste0(data_path, "Datasets/Benchmark_rep", ith_rep, ".fasta"))
+    lapply(methods, function(ith_method) {
+      selected <- s[grepl(ith_method, names(s))]
+      data.frame(method = ith_method,
+                 rep = ith_rep,
+                 len = lengths(selected))
+    }) %>% bind_rows()
+  }) %>% bind_rows()
+  pos <- read_fasta(paste0(data_path, "Datasets/Benchmark_rep1.fasta"))
+  selected_pos <- pos[grepl("AMP=1", names(pos))]
+  pos_df <- data.frame(method = "Positive",
+                       rep = 1,
+                       len = lengths(selected_pos))
+  bind_rows(pos_df, df) %>% 
+    mutate(method = ifelse(method == "Wang", "Wang et al.", method))
+}
+
+calculate_spearman_corr_test_neg_pos_median_len <- function(benchmark_dataset_lengths, detailed_stats) {
+  neg <- filter(benchmark_dataset_lengths, method != "Positive")
+  pos <- filter(benchmark_dataset_lengths, method == "Positive")
+  df <- lapply(unique(neg[["method"]]), function(ith_method) {
+    lapply(1:5, function(ith_rep) {
+      data.frame(seq_source = ith_method,
+                 rep = ith_rep,
+                 median_diff = median(filter(neg, method == ith_method & rep == ith_rep)[["len"]]) - median(pos[["len"]]))
+    }) %>% bind_rows()
+  }) %>% bind_rows()
+  auc <- detailed_stats %>% 
+    group_by(seq_source, rep) %>% 
+    summarise(mean_AUC = mean(AUC)) 
+  all_dat <- left_join(df, auc, by = c("seq_source", "rep"))
+  cor.test(x = all_dat[["mean_AUC"]], all_dat[["median_diff"]])
+}
+
+calculate_spearman_corr_train_test_neg_median_len <- function(benchmark_dataset_lengths, df_all, detailed_stats) {
+  neg <- filter(benchmark_dataset_lengths, method != "Positive") %>% 
+    mutate(Dataset = "Benchmark")
+  all_dat <- bind_rows(neg, 
+                       mutate(
+                         select(
+                           filter(df_all, method != "Positive"),
+                           c("method", "rep", "len")),
+                         Dataset = "Training",
+                         rep = as.numeric(rep)))
+  df <- lapply(unique(all_dat[["method"]]), function(ith_method) {
+    lapply(1:5, function(ith_rep) {
+      data.frame(method = ith_method,
+                 rep = ith_rep,
+                 median_diff = abs(median(filter(all_dat, method == ith_method & rep == ith_rep & Dataset == "Benchmark")[["len"]]) 
+                                   - median(filter(all_dat, method == ith_method & rep == ith_rep & Dataset == "Training")[["len"]])))
+    }) %>% bind_rows()
+  }) %>% bind_rows()
+  auc <- detailed_stats %>% 
+    group_by(method, rep) %>% 
+    summarise(mean_AUC = mean(AUC)) 
+  all_dat <- left_join(df, auc, by = c("method", "rep"))
+  cor.test(x = all_dat[["mean_AUC"]], all_dat[["median_diff"]])
 }

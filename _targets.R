@@ -311,6 +311,28 @@ list(
     mean_sd_table,
     get_mean_sd_table(detailed_stats_mean, 
                       paste0(data_path, "Publication_results/mean_sd_table.txt"))
+  ),
+  tar_target(
+    benchmark_dataset_lengths,
+    get_benchmark_dataset_lengths(data_path, c("iAMP-2L", "dbAMP", "ampir-mature", "CS-AMPPred", 
+                                               "Wang", "AmpGram", "Witten&Witten", "AMPScannerV2", 
+                                               "Gabere&Noble", "AMAP", "AMPlify"))
+  ),
+  tar_target(
+    spearman_cor_test_neg_pos_median_len,
+    calculate_spearman_corr_test_neg_pos_median_len(benchmark_dataset_lengths, detailed_stats)
+  ),
+  tar_target(
+    spearman_cor_neg_test_train_median_len,
+    calculate_spearman_corr_train_test_neg_median_len(benchmark_dataset_lengths, df_all, detailed_stats)
+  ),
+  tar_target(
+    aa_comp_traintest,
+    calculate_test_train_aa_comp_diffs(data_path)
+  ),
+  tar_target(
+    spearman_cor_test_train_aa_comp,
+    calculate_spearman_corr_test_train_aa_comp(aa_comp_traintest, detailed_stats)
   )
 )
 
