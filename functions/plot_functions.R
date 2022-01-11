@@ -733,7 +733,7 @@ get_mean_sd_table <- function(detailed_stats_mean, outfile) {
 
 
 calculate_test_train_aa_comp_diffs <- function(data_path, aa_comp_all, methods_seqnames= c("iAMP-2L", "dbAMP", "ampir-mature", "CS-AMPPred",
-                                                                              "Wang", "AmpGram", "Witten&Witten", "AMPScannerV2", "Gabere&Noble", "AMAP", "AMPlify")) {
+                                                                                           "Wang", "AmpGram", "Witten&Witten", "AMPScannerV2", "Gabere&Noble", "AMAP", "AMPlify")) {
   lapply(1:5, function(j) {
     ds <- read_fasta(paste0(data_path, "/Datasets/Benchmark_rep", j, ".fasta"))
     pos <- unlist(ds[which(grepl("AMP=1", names(ds)))], use.names = FALSE)
@@ -839,16 +839,19 @@ calculate_spearman_corr_train_test_neg_median_len <- function(benchmark_dataset_
                          Dataset = "Training",
                          rep = as.numeric(rep)))
   df <- lapply(unique(all_dat[["method"]]), function(ith_method) {
-    lapply(1:5, function(ith_rep) {
-      data.frame(method = ith_method,
-                 rep = ith_rep,
-                 median_diff = abs(median(filter(all_dat, method == ith_method & rep == ith_rep & Dataset == "Benchmark")[["len"]]) 
-                                   - median(filter(all_dat, method == ith_method & rep == ith_rep & Dataset == "Training")[["len"]])))
+    lapply(unique(all_dat[["method"]]), function(ith_seq_source) {
+      lapply(1:5, function(ith_rep) {
+        data.frame(method = ith_method,
+                   seq_source = ith_seq_source,
+                   rep = ith_rep,
+                   median_diff = abs(median(filter(all_dat, method == ith_seq_source & rep == ith_rep & Dataset == "Benchmark")[["len"]]) 
+                                     - median(filter(all_dat, method == ith_method & rep == ith_rep & Dataset == "Training")[["len"]])))
+      }) %>% bind_rows()
     }) %>% bind_rows()
   }) %>% bind_rows()
   auc <- detailed_stats %>% 
-    group_by(method, rep) %>% 
+    group_by(method, seq_source, rep) %>% 
     summarise(mean_AUC = mean(AUC)) 
-  all_dat <- left_join(df, auc, by = c("method", "rep"))
+  all_dat <- left_join(df, auc, by = c("method", "seq_source", "rep"))
   cor.test(x = all_dat[["mean_AUC"]], all_dat[["median_diff"]])
 }
