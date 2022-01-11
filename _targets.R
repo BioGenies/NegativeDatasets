@@ -16,6 +16,7 @@ library(ggrepel)
 library(dplyr)
 library(patchwork)
 library(tibble)
+library(cowplot)
 
 
 if(Sys.info()[["nodename"]] == "kasia-MACH-WX9") {

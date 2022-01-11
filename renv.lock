@@ -134,6 +134,13 @@
       "Repository": "CRAN",
       "Hash": "f0acb9dcb71a9cd9d5ae233c5035b1c5"
     },
+    "cowplot": {
+      "Package": "cowplot",
+      "Version": "1.1.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "b418e8423699d11c7f2087c2bfd07da2"
+    },
     "cpp11": {
       "Package": "cpp11",
       "Version": "0.2.4",
@@ -621,19 +628,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "6ea435c354e8448819627cf686f66e0a"
-    },
-    "tidysq": {
-      "Package": "tidysq",
-      "Version": "1.1.1",
-      "Source": "GitHub",
-      "Repository": "CRAN",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "tidysq",
-      "RemoteUsername": "BioGenies",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "f801c89da7e28a5562ba7fb3616b2003d0470aea",
-      "Hash": "1ce6a0637cf1c0b62ca97090d75201ef"
     },
     "tinytex": {
       "Package": "tinytex",
