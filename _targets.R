@@ -328,7 +328,7 @@ list(
   ),
   tar_target(
     aa_comp_traintest,
-    calculate_test_train_aa_comp_diffs(data_path)
+    calculate_test_train_aa_comp_diffs(data_path, aa_comp_all)
   ),
   tar_target(
     spearman_cor_test_train_aa_comp,

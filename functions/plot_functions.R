@@ -23,7 +23,8 @@ change_method_names <- function(df) {
                                 method == "Witten" ~ "Witten&Witten",
                                 method == "GabereNoble" ~ "Gabere&Noble",
                                 method %in% c("dbAMP", "ampir-precursor", "ampir-mature", "AmpGram", "AMAP", 
-                                              "AMPlify", "AMPScannerV2", "Positive") ~ method))
+                                              "AMPlify", "AMPScannerV2", "Positive", "Witten&Witten",
+                                              "Wang et al.", "CS-AMPPred", "iAMP-2L", "Gabere&Noble") ~ method))
 }
 
 modify_labels <- function(df, types, shortcuts) {
@@ -731,10 +732,10 @@ get_mean_sd_table <- function(detailed_stats_mean, outfile) {
 }
 
 
-calculate_test_train_aa_comp_diffs <- function(data_path, methods_seqnames= c("iAMP-2L", "dbAMP", "ampir-mature", "CS-AMPPred",
+calculate_test_train_aa_comp_diffs <- function(data_path, aa_comp_all, methods_seqnames= c("iAMP-2L", "dbAMP", "ampir-mature", "CS-AMPPred",
                                                                               "Wang", "AmpGram", "Witten&Witten", "AMPScannerV2", "Gabere&Noble", "AMAP", "AMPlify")) {
   lapply(1:5, function(j) {
-    ds <- read_fasta(paste0(data_path, "Benchmark_rep", j, ".fasta"))
+    ds <- read_fasta(paste0(data_path, "/Datasets/Benchmark_rep", j, ".fasta"))
     pos <- unlist(ds[which(grepl("AMP=1", names(ds)))], use.names = FALSE)
     neg_df <- lapply(1:length(methods_seqnames), function(ith_method) {
       aa <- unlist(ds[which(grepl(methods_seqnames[ith_method], names(ds), fixed = TRUE))], use.names = FALSE)
@@ -751,13 +752,13 @@ calculate_test_train_aa_comp_diffs <- function(data_path, methods_seqnames= c("i
     bind_rows(change_method_names(mutate(filter(aa_comp_all, !(method %in% c("AmPEP", "ampir-precursor"))), Type = "Training")))
 }
 
-calculate_spearman_corr_test_train_aa_comp <- function(aa_comp_traintest) {
+calculate_spearman_corr_test_train_aa_comp <- function(aa_comp_traintest, detailed_stats) {
   test_train_diffs_all <- lapply(1:5, function(ith_rep) {
     lapply(unique(aa_comp_traintest[["method"]])[1:11],
            function(ith_method) {
              lapply(unique(aa_comp_traintest[["method"]])[1:11],
                     function(ith_seq) {
-                      lapply(unique(dat[["aa"]]), function(ith_aa) {
+                      lapply(unique(aa_comp_traintest[["aa"]]), function(ith_aa) {
                         train <- filter(aa_comp_traintest, method == ith_method, rep ==
                                           ith_rep, aa == ith_aa, Type == "Training")[["Freq"]]
                         test <- filter(aa_comp_traintest, method == ith_seq, rep ==
