@@ -552,6 +552,30 @@ get_statistical_analysis_plot_aa_comp_methods <- function(aa_comp_peptides_all) 
     ylab("Second method")
 }
 
+get_statistical_analysis_plot_auc <- function(detailed_stats) {
+  combns <- combn(sort(unique(detailed_stats[["architecture"]])), 2, simplify = FALSE)
+  
+  test_res <- lapply(seq_along(combns), function(ith_combn) {
+    data.frame(architecture1 = combns[[ith_combn]][1],
+               architecture2 = combns[[ith_combn]][2],
+               pval = wilcox.test(filter(detailed_stats, architecture == combns[[ith_combn]][1])[["AUC"]],
+                                  filter(detailed_stats, architecture == combns[[ith_combn]][2])[["AUC"]],
+                                  paired = TRUE)[["p.value"]])
+  }) %>% bind_rows() %>% 
+    mutate(pval_adjusted = p.adjust(pval),
+           is_signif = pval_adjusted < 0.05)
+  
+  ggplot(test_res, aes(x = architecture1, y = architecture2, fill = is_signif)) +
+    geom_tile(color = "white") +
+    theme_bw() +
+    theme(panel.grid.major = element_blank(),
+          axis.text.x = element_text(angle = 90)) +
+    scale_fill_manual("Is significant", values = c(`FALSE` = "#76bef2", `TRUE` = "#ff4242")) +
+    xlab("First architecture") +
+    ylab("Second architecture")
+}
+
+
 get_results_plot_mean_auc_sd <- function(detailed_stats_mean) {
   dat <- detailed_stats_mean %>% 
     mutate(ident = seq_source == method) %>% 
@@ -584,23 +608,26 @@ get_reference_nonreference_AUC <- function(detailed_stats_mean) {
   
   inner_join(reference_auc_df %>% 
                dplyr::group_by(architecture) %>% 
-               dplyr::summarise(reference_mean_AUC = mean(reference_AUC)),
+               dplyr::summarise(reference_mean_AUC = mean(reference_AUC),
+                                reference_sd_AUC = sd(reference_AUC)),
              detailed_stats_mean %>%
                filter(method != seq_source) %>% 
                select(architecture, method, seq_source, nonreference_AUC = mean_AUC) %>% 
                dplyr::group_by(architecture) %>% 
-               dplyr::summarise(nonreference_mean_AUC = mean(nonreference_AUC))) 
+               dplyr::summarise(nonreference_mean_AUC = mean(nonreference_AUC),
+                                nonreference_sd_AUC = sd(nonreference_AUC))) 
 }
 
 get_reference_nonreference_AUC_table <- function(detailed_stats_mean) {
-  df <- get_reference_nonreference_AUC(detailed_stats_mean)
+  df <- get_reference_nonreference_AUC(detailed_stats_mean) %>% 
+    select(-c("reference_sd_AUC", "nonreference_sd_AUC"))
   colnames(df) <- c("Architecture", "Mean reference AUC", "Mean nonreference AUC")
   print(xtable(df),
         file = paste0(data_path, "Publication_results/reference_vs_nonreference_auc_table.txt"),
         include.rownames = FALSE)
 }
 
-plot_reference_vs_nonreference <- function(detailed_stats_mean, architecture_colors) {
+plot_reference_vs_nonreference <- function(detailed_stats_mean, architecture_colors, plot_sd = FALSE) {
   names(architecture_colors) <- paste0("A:", names(architecture_colors))
   detailed_stats_mean %>% 
     modify_labels(types = c("architecture"), shortcuts = c("A")) %>% 
@@ -617,9 +644,23 @@ plot_reference_vs_nonreference <- function(detailed_stats_mean, architecture_col
     scale_color_manual("Architecture", values = architecture_colors) +
     coord_equal() +
     theme_bw() +
-    labs(tag = "A") +
     theme(plot.tag = element_text(size = 24),
-          legend.position = "none")
+          legend.position = "none") + 
+    {
+      if(plot_sd == FALSE) {
+        labs(tag = "A") 
+      } else {
+        list(geom_errorbar(aes(ymin = nonreference_mean_AUC-nonreference_sd_AUC, ymax = nonreference_mean_AUC+nonreference_sd_AUC)),
+             geom_errorbar(aes(xmin = reference_mean_AUC-reference_sd_AUC, xmax = reference_mean_AUC+reference_sd_AUC)))
+      }
+    }
+}
+
+plot_reference_vs_nonreference_with_sd <- function(detailed_stats_mean, architecture_colors) {
+  plot_reference_vs_nonreference(detailed_stats_mean, architecture_colors) +
+    list(geom_errorbar(aes(ymin = nonreference_mean_AUC-nonreference_sd_AUC, ymax = nonreference_mean_AUC+nonreference_sd_AUC)),
+         geom_errorbar(aes(xmin = reference_mean_AUC-reference_sd_AUC, xmax = reference_mean_AUC+reference_sd_AUC)),
+         labs(tag = NULL))
 }
 
 plot_reference_vs_nonreference_by_train_method <- function(detailed_stats_mean, architecture_colors) {

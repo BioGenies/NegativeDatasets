@@ -258,11 +258,25 @@ list(
            width = 18, height = 16)
   ),
   tar_target(
+    architecture_auc_test_plot,
+    ggsave(filename = "auc_test.eps",
+           get_statistical_analysis_plot_auc(detailed_stats),
+           path = paste0(data_path, "Publication_results/"),
+           width = 6, height = 5)
+  ),
+  tar_target(
     ref_vs_nonref_and_effects_plot,
     ggsave(filename = "reference_vs_nonreference+effects.pdf",
            plot_ref_vs_nonref_and_effects(detailed_stats, detailed_stats_mean, architecture_colors, dataset_colors),
            path = paste0(data_path, "Publication_results/"),
            width = 14, height = 14)
+  ),
+  tar_target(
+    ref_vs_nonref_with_sd_plot,
+    ggsave(filename = "reference_vs_nonreference+sd.eps",
+           plot_reference_vs_nonreference(detailed_stats_mean, architecture_colors, plot_sd = TRUE),
+           path = paste0(data_path, "Publication_results/"),
+           width = 6, height = 6)
   ),
   tar_target(
     ref_vs_nonref_by_train_method_plot_pt1,
