@@ -17,6 +17,7 @@ library(dplyr)
 library(patchwork)
 library(tibble)
 library(cowplot)
+library(rmarkdown)
 
 
 if(Sys.info()[["nodename"]] == "kasia-MACH-WX9") {
@@ -348,6 +349,10 @@ list(
   tar_target(
     spearman_cor_test_train_aa_comp,
     calculate_spearman_corr_test_train_aa_comp(aa_comp_traintest, detailed_stats)
+  ),
+  tar_target(
+    roc_curves,
+    render("roc_curves.Rmd", output_format = latex_fragment())
   )
 )
 

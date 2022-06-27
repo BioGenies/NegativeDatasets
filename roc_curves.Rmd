@@ -1,0 +1,55 @@
+---
+title: ""
+output: pdf_document
+---
+\centering
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.width = 6, fig.align = 'center', fig.height = 9)
+
+library(targets)
+library(dplyr)
+library(ggplot2)
+library(ggrepel)
+library(pROC)
+
+tar_load(c(detailed_stats, detailed_stats_mean, seqtype_all_results))
+
+line_colors <- c("#d0ad2f", "#6cb649", "#bc5658",  "#7f49b6", "#497db6")
+```
+
+```{r}
+p <- lapply(unique(seqtype_all_results[["architecture"]]), function(ith_architecture) {
+  lapply(unique(seqtype_all_results[["method"]]), function(ith_method) {
+    lapply(unique(filter(seqtype_all_results, seq_source != "AMP=1")[["seq_source"]]), function(ith_benchmark) {
+      x <- lapply(1:5, function(i) {
+        dat <- filter(seqtype_all_results, architecture == ith_architecture, method == ith_method, seq_source %in% c("AMP=1", ith_benchmark), rep == i)
+        if(all(is.na(dat[["probability"]]))) {
+          roc(dat[["target"]], dat[["prediction"]])
+        } else {
+          roc(dat[["target"]], dat[["probability"]])
+        }
+      })
+      ggroc(x) +
+        theme_bw(base_size = 3) +
+        ggtitle(paste0("A:", ith_architecture, "  TSM:", ith_method, "  BSM:", ith_benchmark)) +
+        geom_line() +
+        coord_equal() +
+        scale_color_manual("Replication", values = line_colors) +
+        theme(legend.position = "none",
+              plot.title = element_text(size = 3))
+    })
+  })
+})
+
+l <- length(unlist(unlist(p, recursive = F), recursive = F))
+for (i in seq(1, l, 24)) {
+  if(i+23 <= l) {
+    unlist(unlist(p, recursive = F), recursive = F)[i:(i+23)] %>% 
+      gridExtra::grid.arrange(grobs = ., ncol = 4)
+  } else {
+    unlist(unlist(p, recursive = F), recursive = F)[i:l] %>% 
+      gridExtra::grid.arrange(grobs = .)
+  }
+}
+```
+
