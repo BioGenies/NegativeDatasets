@@ -351,8 +351,13 @@ list(
     calculate_spearman_corr_test_train_aa_comp(aa_comp_traintest, detailed_stats)
   ),
   tar_target(
+    roc_curves_file,
+    "roc_curves.Rmd",
+    format = "file"
+  ),
+  tar_target(
     roc_curves,
-    render("roc_curves.Rmd", output_format = latex_fragment())
+    render(roc_curves_file, output_format = latex_fragment())
   )
 )
 

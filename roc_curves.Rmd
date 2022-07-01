@@ -19,8 +19,8 @@ line_colors <- c("#d0ad2f", "#6cb649", "#bc5658",  "#7f49b6", "#497db6")
 ```
 
 ```{r,results='asis'}
-p <- lapply(unique(seqtype_all_results[["architecture"]])[1L], function(ith_architecture) {
-  lapply(unique(seqtype_all_results[["method"]])[1L], function(ith_method) {
+p <- lapply(unique(seqtype_all_results[["architecture"]]), function(ith_architecture) {
+  lapply(unique(seqtype_all_results[["method"]]), function(ith_method) {
     lapply(unique(filter(seqtype_all_results, seq_source != "AMP=1")[["seq_source"]]), function(ith_benchmark) {
       x <- lapply(1:5, function(i) {
         dat <- filter(seqtype_all_results, architecture == ith_architecture, method == ith_method, seq_source %in% c("AMP=1", ith_benchmark), rep == i)
@@ -42,18 +42,20 @@ p <- lapply(unique(seqtype_all_results[["architecture"]])[1L], function(ith_arch
   })
 })
 
-
 l <- length(unlist(unlist(p, recursive = FALSE), recursive = FALSE))
-for (i in seq(1, l, 4)) {
-  if(i+3 <= l) {
+
+for (i in seq(1, l, 24)) {
+  if(i+23 <= l) {
     cat("\\begin{figure}")
-    unlist(unlist(p, recursive = FALSE), recursive = FALSE)[i:(i+3)] + plot_layout(ncol = 4)
-    cat("\\caption{", i, "}")
+    unlist(unlist(p, recursive = F), recursive = F)[i:(i+23)] %>% 
+      gridExtra::grid.arrange(grobs = ., ncol = 4)
+    cat(paste0("\\caption{ROC curves ", i, "-", i+23, " of ", l, ". Each subplot presents results for five replications indicated by different line colors.}"))
     cat("\\end{figure}")
   } else {
     cat("\\begin{figure}")
-    unlist(unlist(p, recursive = FALSE), recursive = FALSE)[i:l] + plot_layout(ncol = 4)
-    cat("\\caption{", i, "}")
+    unlist(unlist(p, recursive = F), recursive = F)[i:l] %>% 
+      gridExtra::grid.arrange(grobs = ., ncol = 4)
+    cat(paste0("\\caption{ROC curves ", i, "-", l, " of ", l, ". Each subplot presents results for five replications indicated by different line colors.}"))
     cat("\\end{figure}")
   }
 }
