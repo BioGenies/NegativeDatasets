@@ -11,7 +11,6 @@ library(dplyr)
 library(ggplot2)
 library(ggrepel)
 library(pROC)
-library(patchwork)
 
 tar_load(c(detailed_stats, detailed_stats_mean, seqtype_all_results))
 
@@ -46,18 +45,17 @@ l <- length(unlist(unlist(p, recursive = FALSE), recursive = FALSE))
 
 for (i in seq(1, l, 24)) {
   if(i+23 <= l) {
-    cat("\\begin{figure}")
-    unlist(unlist(p, recursive = F), recursive = F)[i:(i+23)] %>% 
+    cat("\\begin{figure}  \n\\renewcommand{\\thefigure}{S\\arabic{figure}}  \n")
+    unlist(unlist(p, recursive = FALSE), recursive = FALSE)[i:(i+23)] %>% 
       gridExtra::grid.arrange(grobs = ., ncol = 4)
-    cat(paste0("\\caption{ROC curves ", i, "-", i+23, " of ", l, ". Each subplot presents results for five replications indicated by different line colors.}"))
-    cat("\\end{figure}")
+    cat(paste0("\\caption[ROC curves ", i, "-", l, " of ", l, "]{ROC curves ", i, "-", i+23, " of ", l, ". Each subplot presents results for five replications indicated by different line colors.}"))
+    cat(paste0("\\label{roc", i, "-", i+23, "}\\end{figure}"))
   } else {
-    cat("\\begin{figure}")
-    unlist(unlist(p, recursive = F), recursive = F)[i:l] %>% 
+    cat("\\begin{figure}  \n\\renewcommand{\\thefigure}{S\\arabic{figure}}  \n")
+    unlist(unlist(p, recursive = FALSE), recursive = FALSE)[i:l] %>% 
       gridExtra::grid.arrange(grobs = ., ncol = 4)
-    cat(paste0("\\caption{ROC curves ", i, "-", l, " of ", l, ". Each subplot presents results for five replications indicated by different line colors.}"))
-    cat("\\end{figure}")
+    cat(paste0("\\caption[ROC curves ", i, "-", l, " of ", l, "]{ROC curves ", i, "-", l, " of ", l, ". Each subplot presents results for five replications indicated by different line colors.}"))
+    cat(paste0("\\label{roc", i, "-", l, "}  \n\\end{figure}"))
   }
 }
 ```
-
