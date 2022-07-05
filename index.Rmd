@@ -1,0 +1,23 @@
+---
+title: Benchmarks in antimicrobial peptide prediction are biased due to the selection of negative data
+output:                                                                                                         
+  html_document:
+    toc: true
+    toc_float:
+      toc_collapsed: false
+    toc_depth: 3
+    number_sections: false                                                                                                
+    css: lux.css                                                                                               
+---      
+
+# About
+
+Words, words
+
+# AMPBenchmark
+
+# Citation
+
+# Important links
+
+ - https://github.com/BioGenies/NegativeDatasets: the repository containing the code necessary to reproduce results of our analysis.
