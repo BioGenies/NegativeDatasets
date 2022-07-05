@@ -35,9 +35,9 @@ If you have any questions, suggestions or comments, contact [Michal Burdukiewicz
  - Dominik Rafacz.
  - Laura Bąkała.
  - Jadwiga Słowik.
- - (Rafał Kolenda)[https://twitter.com/kolendarafal].
+ - [Rafał Kolenda](https://twitter.com/kolendarafal).
  - Stefan Rödiger.
  - Legana C H W Fingerhut.
  - Ira R Cooke.
  - Paweł Mackiewicz.
- - (Michał Burdukiewicz)[https://github.com/michbur].
+ - [Michał Burdukiewicz](https://github.com/michbur).
