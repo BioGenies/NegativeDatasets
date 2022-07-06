@@ -29,7 +29,9 @@ The main conclusion from our analyses is that similar training and benchmark dat
 
 <img src="./figures/Fig2A.png" style="width: 500px;"/>
 
-Our study represents the first unbiased approach to compare models for AMP prediction, and moreover, we made reproducible another six model architectures for further research. In total, we built a staggering number of 660 machine learning models from 12 architectures. Therefore, being fully aware of the difficulty of the task, we highly recommend all researchers to embrace the notion of fair benchmarking and reproducibility by using AMPBenchmark web server
+Our study represents the first unbiased approach to compare models for AMP prediction, and moreover, we made reproducible another six model architectures for further research. In total, we built a staggering number of 660 machine learning models from 12 architectures. Therefore, being fully aware of the difficulty of the task, we highly recommend all researchers to embrace the notion of fair benchmarking and reproducibility by using AMPBenchmark web server.
+
+Read more in our pre-print: https://doi.org/10.1101/2022.05.30.493946.
  
 # AMPBenchmark
 
