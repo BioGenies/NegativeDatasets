@@ -3,8 +3,6 @@
 .RData
 .Ruserdata
 NegativeDatasets.Rproj
-<<<<<<< HEAD
-=======
 README.md
 _targets
 _targets.R
@@ -18,4 +16,4 @@ renv
 renv.lock
 reports
 third-party
->>>>>>> gh-pages
+
