@@ -31,7 +31,6 @@ The main conclusion from our analyses is that similar training and benchmark dat
 
 Our study represents the first unbiased approach to compare models for AMP prediction, and moreover, we made reproducible another six model architectures for further research. In total, we built a staggering number of 660 machine learning models from 12 architectures. Therefore, being fully aware of the difficulty of the task, we highly recommend all researchers to embrace the notion of fair benchmarking and reproducibility by using the [AMPBenchmark](http://biogenies.info/AMPBenchmark/) web server.
 
-Read more in our pre-print: https://doi.org/10.1101/2022.05.30.493946.
  
 # AMPBenchmark
 
@@ -42,21 +41,22 @@ For more detailed instruction click [here](https://github.com/BioGenies/AMPBench
 
 
 
-# Citation
+```{r echo = FALSE, results = 'asis'}
+source("https://raw.githubusercontent.com/BioGenies/NegativeDatasets/main/docs/rmd_scripts.R")
+cat(negative_sampling_citation())
+```
 
-Katarzyna Sidorczuk, Przemysław Gagat, Filip Pietluch, Jakub Kała, Dominik Rafacz, Laura Bąkała, Jadwiga Słowik, Rafał Kolenda, Stefan Rödiger, Legana C H W Fingerhut, Ira R Cooke, Paweł Mackiewicz, Michał Burdukiewicz [*Benchmarks in antimicrobial peptide prediction are biased due to the selection of negative data.*](https://doi.org/10.1101/2022.05.30.493946)
 
-# Important links
+```{r echo = FALSE, results = 'asis'}
+cat(negative_sampling_links())
+```
 
- - https://github.com/BioGenies/NegativeDatasets: the repository containing the code necessary to reproduce results of our analysis.
- - https://github.com/BioGenies/NegativeDatasetsArchitectures: the repository containing all architectures considered in our analysis.
- - https://github.com/BioGenies/AMPBenchmark: the source code of AMPBenchmark.
   
-  
-# Contact
+```{r echo = FALSE, results = 'asis'}
+cat(negative_sampling_contact())
+```
 
-If you have any questions, suggestions or comments, contact [Michal Burdukiewicz](mailto:michalburdukiewicz@gmail.com).
- 
+
 # Participants
 
  - [Katarzyna Sidorczuk](https://twitter.com/k_sidorczuk).
