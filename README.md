@@ -1,7 +1,7 @@
 
 # NegativeDatasets
 
-# Citation
+## Citation
 
 Katarzyna Sidorczuk, Przemysław Gagat, Filip Pietluch, Jakub Kała,
 Dominik Rafacz, Laura Bąkała, Jadwiga Słowik, Rafał Kolenda, Stefan
@@ -64,7 +64,7 @@ obtaining results,
 
 **third-party** - third-party executables used in the pipeline.
 
-# Important links
+## Important links
 
 -   <https://github.com/BioGenies/NegativeDatasets>: the repository
     containing the code necessary to reproduce results of our analysis.
@@ -73,7 +73,7 @@ obtaining results,
 -   <https://github.com/BioGenies/AMPBenchmark>: the source code of
     AMPBenchmark.
 
-# Contact
+## Contact
 
 If you have any questions, suggestions or comments, contact [Michal
 Burdukiewicz](mailto:michalburdukiewicz@gmail.com).
