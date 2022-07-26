@@ -1,6 +1,7 @@
 negative_sampling_citation <- function() {
   "
-  ## Citation
+  
+  # Citation
   
   Katarzyna Sidorczuk, Przemysław Gagat, Filip Pietluch, Jakub Kała, Dominik Rafacz, 
   Laura Bąkała, Jadwiga Słowik, Rafał Kolenda, Stefan Rödiger, Legana C H W Fingerhut, 
